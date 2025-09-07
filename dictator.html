@@ -284,6 +284,17 @@
           <label for="theme-toggle">Ночная тема</label>
         </div>
 
+        <div class="theme-switch" style="margin-top:10px">
+          <label class="switch">
+            <input type="checkbox" id="speak-punct-toggle" checked>
+            <span class="slider"></span>
+          </label>
+          <label for="speak-punct-toggle">Проговаривать знаки препинания</label>
+        </div>
+        
+        <div style="margin-top:10px">
+          <button id="help-button">Справка</button>
+
         <div style="margin-top:10px">
           <button id="help-button">Справка</button>
         </div>
@@ -370,6 +381,7 @@
     const progressBar = document.getElementById('progress-bar');
     const themeToggle = document.getElementById('theme-toggle');
     const indicator = document.getElementById('indicator');
+    const speakPunctToggle = document.getElementById('speak-punct-toggle');
     const pauseResumeButton = document.getElementById('pause-resume-button');
 
     // Пауза/возобновление
@@ -468,7 +480,8 @@
         voice: voiceSelect.value,
         nightMode: themeToggle.checked,
         textSize: textSizeControl.value,
-        dictationSize: dictationSizeControl.value
+        dictationSize: dictationSizeControl.value,
+        speakPunctuation: speakPunctToggle ? speakPunctToggle.checked : true
       };
       setCookie("dictatorSettings", JSON.stringify(settings), 365);
       setCookie("dictisSettings", "", -1);
@@ -490,6 +503,7 @@
         if (typeof settings.nightMode === 'boolean') { themeToggle.checked = settings.nightMode; document.body.classList.toggle('night-mode', settings.nightMode); }
         if (settings.textSize) { textSizeControl.value = settings.textSize; textSizeValue.textContent = settings.textSize + "px"; textInput.style.fontSize = settings.textSize + "px"; }
         if (settings.dictationSize) { dictationSizeControl.value = settings.dictationSize; dictationSizeValue.textContent = settings.dictationSize + "px"; sentenceContent.style.fontSize = settings.dictationSize + "px"; }
+        if (typeof settings.speakPunctuation === "boolean" && speakPunctToggle) { speakPunctToggle.checked = settings.speakPunctuation; }
       } catch (err) {
         console.error("Ошибка при парсинге куки настроек:", err);
       }
@@ -509,6 +523,7 @@
       textSizeControl.value = "16"; textSizeValue.textContent = "16px"; textInput.style.fontSize = "16px";
       dictationSizeControl.value = "48"; dictationSizeValue.textContent = "48px"; sentenceContent.style.fontSize = "48px";
       themeToggle.checked = true; document.body.classList.add('night-mode');
+      if (speakPunctToggle) speakPunctToggle.checked = true;
       saveSettingsToCookies();
     }
 
@@ -524,6 +539,7 @@
     wordPauseControl.addEventListener('input', () => { wordPauseValue.textContent = wordPauseControl.value; saveSettingsToCookies(); });
     voiceSelect.addEventListener('change', () => { saveSettingsToCookies(); });
     themeToggle.addEventListener('change', () => { document.body.classList.toggle('night-mode', themeToggle.checked); saveSettingsToCookies(); });
+    if (speakPunctToggle) speakPunctToggle.addEventListener('change', () => { saveSettingsToCookies(); });
 
     textSizeControl.addEventListener('input', () => { textSizeValue.textContent = textSizeControl.value + "px"; textInput.style.fontSize = textSizeControl.value + "px"; saveSettingsToCookies(); });
     dictationSizeControl.addEventListener('input', () => { dictationSizeValue.textContent = dictationSizeControl.value + "px"; sentenceContent.style.fontSize = dictationSizeControl.value + "px"; saveSettingsToCookies(); });
@@ -710,7 +726,8 @@
           function stepReadToken(cb) {
             highlightWord(wordIndex);
             if (isPunctTok) {
-              speakPunctuation(token, wordIndex, () => { cb(); });
+              if (speakPunctToggle && !speakPunctToggle.checked) { unhighlightWord(wordIndex); cb(); }
+              else { speakPunctuation(token, wordIndex, () => { cb(); }); }
             } else if (isLongWord) {
               yandexTtsPlay(
                 token,
