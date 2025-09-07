@@ -321,30 +321,37 @@
         </div>
         
         <div style="margin-top:10px">
-          <button id="help-button">Справка</button>
-
-        <div style="margin-top:10px">
-          <button id="help-button">Справка</button>
+          <button id="help-button" type="button">Справка</button>
         </div>
         <div id="help-section">
-          <h2>Справка и описание приложения</h2>
-          <p><strong>Dictator</strong> — это приложение для озвучивания введённого текста с помощью голосов Яндекс. Оно позволяет обучаться правильному произношению и разбирать тексты по словам и предложениям.</p>
-          <h3>Настройки:</h3>
+          <h2>Справка</h2>
+          <p><strong>Dictator</strong> — тренажёр диктанта: приложение озвучивает введённый текст голосами Яндекс (<code>zahar</code> и <code>jane</code>), разбирая его на предложения и слова.</p>
+
+          <h3>Как пользоваться</h3>
+          <ol>
+            <li>Вставьте или введите текст в поле.</li>
+            <li>Нажмите «Старт» (или клавишу <kbd>Space</kbd>) — начнётся диктовка.</li>
+            <li>Кнопкой «Пауза/Продолжить» можно временно остановить и возобновить озвучивание.</li>
+            <li>«Стоп» завершает диктовку и возвращает текст в поле.</li>
+          </ol>
+
+          <h3>Что важно знать</h3>
           <ul>
-            <li><strong>Голос</strong>: выбор между «Мужской (zahar)» и «Женский (jane)».</li>
-            <li><strong>Скорость предложений</strong>: общая скорость чтения целых предложений.</li>
-            <li><strong>Скорость слов</strong>: скорость произношения отдельных слов внутри предложения.</li>
-            <li><strong>Скорость повторного чтения длинных слов</strong>: если слово длиннее определённого порога, оно повторяется с другой скоростью.</li>
-            <li><strong>Скорость вспомогательных выражений</strong>: для "С большой буквы", "Новая строка" и т.п.</li>
-            <li><strong>Громкость</strong>: громкость (0 — без звука, 1 — максимум).</li>
-            <li><strong>Порог длинного слова (букв)</strong>: если слово длиннее заданного числа символов, оно повторяется.</li>
-            <li><strong>Пауза между словами (мс)</strong>: задержка между воспроизведением соседних слов.</li>
-            <li><strong>Размер шрифта (текст)</strong>: меняет размер шрифта в поле ввода.</li>
-            <li><strong>Размер шрифта (диктовка)</strong>: меняет размер шрифта у выводимого предложения во время диктовки.</li>
+            <li><strong>Автосохранение текста</strong>: весь текст автоматически сохраняется в <code>localStorage</code>. При закрытии или перезагрузке вкладки он будет восстановлен.</li>
+            <li><strong>Настройки</strong> (скорости, паузы, громкость, тема, пресеты, размеры шрифтов) сохраняются в cookie на 365 дней.</li>
+            <li><strong>Знаки препинания</strong>: переключатель «Проговаривать знаки препинания» включает/выключает произношение «Точка», «Запятая» и т.д.</li>
+            <li><strong>Подсказки</strong>: при новой строке/абзаце и при «двойных» буквах озвучиваются вспомогательные фразы.</li>
+            <li><strong>Совместимость</strong>: работает на десктопе и мобильных устройствах. Учтите системную громкость и беззвучный режим.</li>
+            <li><strong>Конфиденциальность</strong>: текст хранится только локально в вашем браузере; для озвучки используется запрос к TTS‑сервису.</li>
           </ul>
-          <p><strong>Ночная тема</strong>: переключатель, меняет фон и цвет текста (по умолчанию включена).</p>
-          <p>Кнопка <em>«Сброс настроек»</em> возвращает все ползунки и тему к значениям по умолчанию. Настройки сохраняются в cookie на 365 дней.</p>
-        </div>
+
+          <h3>Быстрые настройки</h3>
+          <ul>
+            <li>Пресеты «Медленный», «Обычный», «Быстрый» — мгновенно подбирают скорости и паузы.</li>
+            <li>«Размер шрифта (текст)» и «Размер шрифта (диктовка)» — под разные экраны.</li>
+            <li>«Ночная тема» — переключение цветовой схемы.</li>
+          </ul>
+</div>
       </div>
     </details>
   </div>
@@ -415,6 +422,21 @@
     const progressBar = document.getElementById('progress-bar');
     const themeToggle = document.getElementById('theme-toggle');
     const indicator = document.getElementById('indicator');
+    // === Автосохранение текста в localStorage ===
+    const LOCAL_TEXT_KEY = 'dictatorText';
+    function saveTextToStorage(val) {
+      try { localStorage.setItem(LOCAL_TEXT_KEY, val || ''); } catch (e) {}
+    }
+    function loadTextFromStorage() {
+      try {
+        const v = localStorage.getItem(LOCAL_TEXT_KEY);
+        if (v !== null && typeof v === 'string') { textInput.value = v; }
+      } catch (e) {}
+    }
+    function clearTextStorage() {
+      try { localStorage.removeItem(LOCAL_TEXT_KEY); } catch (e) {}
+    }
+
 
     const presetsEl = document.getElementById('presets');
     const presetButtons = presetsEl ? Array.from(presetsEl.querySelectorAll('.preset-btn')) : [];
@@ -607,11 +629,14 @@
     textSizeControl.addEventListener('input', () => { textSizeValue.textContent = textSizeControl.value + "px"; textInput.style.fontSize = textSizeControl.value + "px"; saveSettingsToCookies(); });
     dictationSizeControl.addEventListener('input', () => { dictationSizeValue.textContent = dictationSizeControl.value + "px"; sentenceContent.style.fontSize = dictationSizeControl.value + "px"; saveSettingsToCookies(); });
 
+    // Автосохранение при любом вводе
+    textInput.addEventListener('input', () => saveTextToStorage(textInput.value));
+
     pasteButton.addEventListener('click', async () => {
-      try { const clipText = await navigator.clipboard.readText(); textInput.value += clipText; }
+      try { const clipText = await navigator.clipboard.readText(); textInput.value += clipText; saveTextToStorage(textInput.value); }
       catch (err) { alert("Не удалось вставить из буфера."); }
     });
-    clearButton.addEventListener('click', () => { textInput.value = ''; });
+    clearButton.addEventListener('click', () => { textInput.value = ''; clearTextStorage(); });
     resetButton.addEventListener('click', resetSettings);
 
     pauseResumeButton.addEventListener('click', () => {
@@ -891,6 +916,7 @@
       sentenceDisplay.style.display = 'none';
       textInput.style.display = 'block';
       textInput.value = originalText;
+      saveTextToStorage(textInput.value);
       startStopButton.textContent = 'Старт';
       pasteButton.disabled = false; clearButton.disabled = false; resetButton.disabled = false;
       isSpeaking = false;
@@ -911,8 +937,9 @@
     function playNotificationSound() { const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); audio.play().catch(e => console.error('bell error', e)); }
     function speakFinalExpression() { yandexTtsPlay('Конспект окончен', parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { restoreOriginalText(); }); }
 
-    // При загрузке — восстановить настройки
+    // При загрузке — восстановить настройки и текст
     loadSettingsFromCookies();
-  </script>
+    loadTextFromStorage();
+</script>
 </body>
 </html>
