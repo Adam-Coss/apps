@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Dictis (Все голоса Яндекс)</title>
+  <title>Dictator (Все голоса Яндекс)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     /* ====== Базовая тема и переменные ====== */
@@ -106,7 +106,16 @@
       font-size: 48px; /* управляется ползунком */
     }
 
-    .highlight { color: #FFD700; text-shadow: 0 0 10px #FF69B4; text-decoration: underline; font-weight: 700; }
+    .highlight {
+      background: var(--hl-bg);
+      color: var(--hl-fg);
+      padding: 2px 4px;
+      border-radius: 6px;
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+      text-shadow: var(--hl-shadow);
+    }
 
     /* Прогресс и индикаторы — скрыты, пока не идёт диктовка */
     #progress-container { display: none; width: 100%; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 16px; }
@@ -261,7 +270,7 @@
         </div>
         <div id="help-section">
           <h2>Справка и описание приложения</h2>
-          <p><strong>Dictis</strong> — это приложение для озвучивания введённого текста с помощью голосов Яндекс. Оно позволяет обучаться правильному произношению и разбирать тексты по словам и предложениям.</p>
+          <p><strong>Dictator</strong> — это приложение для озвучивания введённого текста с помощью голосов Яндекс. Оно позволяет обучаться правильному произношению и разбирать тексты по словам и предложениям.</p>
           <h3>Настройки:</h3>
           <ul>
             <li><strong>Голос</strong>: выбор между «Мужской (zahar)» и «Женский (jane)».</li>
@@ -329,7 +338,12 @@
     const helpSection = document.getElementById('help-section');
 
     let isSpeaking = false;
+      isPaused = false; resumeQueue = [];
+      if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
     let speechStopped = false;
+    let isPaused = false;
+    let resumeQueue = [];
+    let currentAudio = null;
     let originalText = '';
     let sentences = [];
     let currentSentenceIndex = 0;
@@ -380,11 +394,11 @@
         textSize: textSizeControl.value,
         dictationSize: dictationSizeControl.value
       };
-      setCookie("dictisSettings", JSON.stringify(settings), 365);
+      setCookie("dictatorSettings", JSON.stringify(settings), 365);
     }
 
     function loadSettingsFromCookies() {
-      const data = getCookie("dictisSettings");
+      const data = getCookie("dictatorSettings");
       if (!data) return;
       try {
         const settings = JSON.parse(data);
@@ -405,7 +419,7 @@
     }
 
     function resetSettings() {
-      setCookie("dictisSettings", "", -1);
+      setCookie("dictatorSettings", "", -1);
       sentenceSpeedControl.value = "1.0";    sentenceSpeedValue.textContent = "1.0x";
       wordSpeedControl.value = "1.0";       wordSpeedValue.textContent = "1.0x";
       slowWordSpeedControl.value = "0.5";   slowWordSpeedValue.textContent = "0.5x";
@@ -443,7 +457,56 @@
     clearButton.addEventListener('click', () => { textInput.value = ''; });
     resetButton.addEventListener('click', resetSettings);
 
-    helpButton.addEventListener('click', () => { helpSection.style.display = (helpSection.style.display === 'none') ? 'block' : 'none'; });
+    // Автосохранение текста
+    function saveText(){ try { localStorage.setItem('dictatorText', textInput.value || ''); } catch(e){} }
+    function loadText(){ try { const t = localStorage.getItem('dictatorText'); if (t !== null) textInput.value = t; } catch(e){} }
+    textInput.addEventListener('input', saveText);
+    window.addEventListener('beforeunload', saveText);
+    clearButton.addEventListener('click', () => { try { localStorage.setItem('dictatorText',''); } catch(e){} });
+
+    helpButton.addEventListener('click', () => {
+      const isHidden = getComputedStyle(helpSection).display === 'none';
+      helpSection.style.display = isHidden ? 'block' : 'none';
+    });
+
+    // Пауза/возобновление пробелом (ПК)
+    function pauseSpeech(){
+      if (!isSpeaking || isPaused) return;
+      isPaused = true;
+      if (currentAudio) { try { currentAudio.pause(); } catch(e){} }
+      indicator.textContent = 'Пауза';
+      indicator.classList.add('visible');
+    }
+    function resumeSpeech(){
+      if (!isSpeaking || !isPaused) return;
+      isPaused = false;
+      if (currentAudio) { currentAudio.play().catch(()=>{}); }
+      indicator.textContent = '';
+      indicator.classList.remove('visible');
+      const q = resumeQueue.slice(); resumeQueue = [];
+      q.forEach(fn => { if (!speechStopped) fn(); });
+    }
+    function togglePauseOrStart(){
+      if (!isSpeaking) { startStopButton.click(); return; }
+      if (isPaused) resumeSpeech(); else pauseSpeech();
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !e.repeat) {
+        const ae = document.activeElement;
+        const typing = ae && (ae === textInput || (ae.tagName === 'INPUT' && ae.type === 'text'));
+        if (!typing) { e.preventDefault(); togglePauseOrStart(); }
+      }
+    });
+
+    // Планировщик, учитывающий паузу
+    function deferOrRun(fn, delay){
+      if (isPaused) { resumeQueue.push(() => { if (!speechStopped) fn(); }); return; }
+      if (!delay) { if (!speechStopped) fn(); return; }
+      setTimeout(() => {
+        if (isPaused) resumeQueue.push(() => { if (!speechStopped) fn(); });
+        else if (!speechStopped) fn();
+      }, delay);
+    }
 
     /*************************************************************
      *   СТАРТ/СТОП
@@ -650,10 +713,10 @@
                 if (nextI < words.length) {
                   const nextTok = words[nextI];
                   if (isPunctTok && isPunctuation(nextTok)) {
-                    setTimeout(() => { wordIndex++; speakNext(); }, 200);
+                    deferOrRun(() => { wordIndex++; speakNext(); }, 200);
                   } else if (!isPunctuation(nextTok)) {
                     const pause = parseInt(wordPauseControl.value, 10) || 0;
-                    setTimeout(() => { wordIndex++; speakNext(); }, pause);
+                    deferOrRun(() => { wordIndex++; speakNext(); }, pause);
                   } else { wordIndex++; speakNext(); }
                 } else { resolve(); }
               });
@@ -674,9 +737,11 @@
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.volume = volume;
-        audio.onended = () => callback();
-        audio.onerror = () => callback();
-        audio.play().catch(err => { console.error("Ошибка audio.play():", err); callback(); });
+        currentAudio = audio;
+        audio.onended = () => { const run = () => callback(); if (isPaused) resumeQueue.push(run); else run(); };
+        audio.onerror = () => { const run = () => callback(); if (isPaused) resumeQueue.push(run); else run(); };
+        if (isPaused) { resumeQueue.push(() => { try { audio.play().catch(()=>{}); } catch(e){} }); }
+        else { audio.play().catch(err => { console.error('Ошибка audio.play():', err); callback(); }); }
       })
       .catch(err => { console.error("Ошибка fetch TTS:", err); callback(); });
     }
@@ -721,6 +786,7 @@
 
     // При загрузке — восстановить настройки
     loadSettingsFromCookies();
+    loadText();
   </script>
 </body>
 </html>
