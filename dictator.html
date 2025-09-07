@@ -5,1039 +5,722 @@
   <title>Dictis (Все голоса Яндекс)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    /* ====== Базовая тема и переменные ====== */
+    :root {
+      --bg: #ffffff;
+      --fg: #111111;
+      --muted: #666;
+      --surface: #f5f7fb;
+      --primary: #3b82f6; /* синий */
+      --primary-pressed: #2563eb;
+      --accent: #76c7c0;
+      --border: #e5e7eb;
+      --radius: 14px;
+      --shadow: 0 8px 30px rgba(0,0,0,.08);
+    }
+    body.night-mode {
+      --bg: #0f1220;
+      --fg: #f7f7fb;
+      --muted: #a0a3b1;
+      --surface: #171a2b;
+      --primary: #60a5fa;
+      --primary-pressed: #3b82f6;
+      --accent: #76c7c0;
+      --border: #262a40;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      text-align: center;
-      background-color: #333; /* Ночная тема по умолчанию */
-      color: #fff;
-    }
-    .night-mode {
-      background-color: #333;
-      color: #fff;
-    }
-    body:not(.night-mode) {
-      background-color: #fff;
-      color: #000;
+      margin: 0; padding: 24px 16px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg); color: var(--fg);
+      transition: background .3s ease, color .3s ease;
     }
 
-    /* === Поле ввода текста (размер будет управляться JS) === */
-    textarea {
+    .app {
+      max-width: 820px; margin: 0 auto;
+    }
+
+    /* Заголовок прячем в настройках, оставим компактный бейдж */
+    .brand {
+      display: none;
+    }
+
+    /* Карточка ввода */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    textarea#text-input {
       width: 100%;
-      height: 150px;
-      padding: 10px;
-      resize: vertical;
-      box-sizing: border-box;
-      background-color: #555;
-      color: #fff;
-      font-size: 16px; /* Базовое значение — при запуске */
+      min-height: 180px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: inherit;
+      font-size: 16px; /* актуальное значение дальше управляет JS */
+      line-height: 1.5;
+      outline: none;
     }
-    body:not(.night-mode) textarea {
-      background-color: #f0f0f0;
-      color: #000000;
-    }
+    textarea#text-input::placeholder { color: var(--muted); }
 
-    /* Блок для диктуемого предложения: */
+    .actions {
+      margin-top: 12px;
+      display: flex; gap: 12px; flex-wrap: wrap;
+      align-items: center; justify-content: center;
+    }
+    #start-stop-button {
+      -webkit-tap-highlight-color: transparent;
+      appearance: none;
+      border: none; cursor: pointer;
+      padding: 14px 22px; font-size: 16px; font-weight: 600;
+      border-radius: 999px;
+      background: var(--primary); color: #fff;
+      transition: transform .02s ease, background .2s ease;
+      min-width: 160px;
+    }
+    #start-stop-button:active { transform: translateY(1px); background: var(--primary-pressed); }
+
+    /* Отображение диктуемого предложения */
     #sentence-display {
       width: 100%;
-      min-height: 150px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      display: none; /* По умолчанию скрыт */
-      margin-top: 10px;
-      background-color: #f9f9f9;
-      color: #000;
+      min-height: 160px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      background: transparent;
+      color: inherit;
+      display: none; /* по умолчанию скрыто */
+      margin-top: 14px;
     }
-    body.night-mode #sentence-display {
-      background-color: #444;
-      color: #fff;
-    }
-
-    /* Внутренние таблицы для вертикального/гориз. центрирования */
-    #sentence-wrapper {
-      display: table;
-      width: 100%;
-      height: 100%;
-    }
+    #sentence-wrapper { display: table; width: 100%; height: 100%; }
     #sentence-content {
-      display: table-cell;
-      vertical-align: middle;
-      text-align: center;
-
-      padding: 10px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      box-sizing: border-box;
-
-      /* По умолчанию сделаем 48px — в 3 раза больше 16px */
-      font-size: 48px;
+      display: table-cell; vertical-align: middle; text-align: center;
+      padding: 12px; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box;
+      font-size: 48px; /* управляется ползунком */
     }
 
-    .highlight {
-      color: #FFD700;
-      text-shadow: 0 0 10px #FF69B4;
-      text-decoration: underline;
-      font-weight: bold;
+    .highlight { color: #FFD700; text-shadow: 0 0 10px #FF69B4; text-decoration: underline; font-weight: 700; }
+
+    /* Прогресс и индикаторы — скрыты, пока не идёт диктовка */
+    #progress-container { display: none; width: 100%; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 16px; }
+    body.night-mode #progress-container { background: #2a2f46; }
+    #progress-bar { width: 0%; height: 10px; background: var(--accent); transition: width .3s; }
+    body.speaking #progress-container { display: block; }
+
+    #indicator { display: none; margin-top: 8px; font-size: 15px; color: #FF7A45; opacity: 0; height: auto; transition: opacity .3s; text-align: center; }
+    #indicator.visible { display: block; opacity: 1; }
+
+    /* ====== Спойлер «Настройки» ====== */
+    details.settings {
+      margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
-    #timer {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #bbb;
+    details.settings > summary {
+      list-style: none; cursor: pointer; user-select: none;
+      padding: 14px 16px; font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    body:not(.night-mode) #timer {
-      color: #555;
+    details.settings > summary::-webkit-details-marker { display: none; }
+    .caret { inline-size: 1em; block-size: 1em; display: inline-block; transform: rotate(0deg); transition: transform .2s ease; }
+    details[open] .caret { transform: rotate(90deg); }
+
+    .settings-body { padding: 8px 16px 16px; border-top: 1px solid var(--border); }
+
+    /* Компоновка контролов — адаптивная сетка */
+    .controls { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 8px; }
+    .control-group { display: grid; gap: 6px; }
+    .control-group label { font-size: 14px; color: var(--muted); }
+    input[type="range"] { width: 100%; }
+
+    @media (min-width: 720px) {
+      .controls { grid-template-columns: repeat(2, 1fr); }
     }
-    #progress-container {
-      width: 100%;
-      background-color: #666;
-      border-radius: 5px;
-      overflow: hidden;
-      margin-top: 20px;
-    }
-    body:not(.night-mode) #progress-container {
-      background-color: #e0e0e0;
-    }
-    #progress-bar {
-      width: 0%;
-      height: 20px;
-      background-color: #76c7c0;
-      transition: width 0.3s;
-    }
-    #indicator {
-      margin-top: 10px;
-      font-size: 16px;
-      color: #FF4500;
-      height: 24px;
-      transition: opacity 0.5s;
-      opacity: 0;
-    }
-    #indicator.visible {
-      opacity: 1;
-    }
-    .controls {
-      margin-top: 15px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .controls .control-group {
-      margin-bottom: 10px;
-      width: 100%;
-      max-width: 350px;
-    }
-    .additional-buttons, .theme-switch {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+
+    /* Кнопки доп. действий */
+    .additional-buttons { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; }
     .additional-buttons button {
-      margin: 5px 0;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-      width: 100%;
-      max-width: 150px;
-      background-color: #007BFF;
-      color: #ffffff;
-      border: none;
-      border-radius: 4px;
+      padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border);
+      background: transparent; color: inherit; cursor: pointer; font-weight: 600;
     }
-    .additional-buttons button:hover {
-      background-color: #0056b3;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      width: 100%;
-      background-color: #007BFF;
-      color: #ffffff;
-      border: none;
-      border-radius: 4px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    @media (min-width: 600px) {
-      .controls {
-        flex-direction: row;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      .controls .control-group {
-        margin-right: 20px;
-        margin-bottom: 0;
-      }
-      .additional-buttons {
-        flex-direction: row;
-        justify-content: center;
-      }
-      .additional-buttons button {
-        margin: 0 10px;
-      }
-      button {
-        width: auto;
-        display: inline-block;
-        margin: 15px 10px 0 10px;
-      }
-    }
-    #voice-select {
-      margin: 8px;
-      font-size: 14px;
-      padding: 4px;
-    }
+    .additional-buttons button:hover { background: rgba(0,0,0,.04); }
+    body.night-mode .additional-buttons button:hover { background: rgba(255,255,255,.06); }
 
-    /* Стили для переключателя ночной темы */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 60px;
-      height: 34px;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 34px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 26px;
-      width: 26px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #2196F3;
-    }
-    input:checked + .slider:before {
-      transform: translateX(26px);
-    }
+    /* Переключатель темы — оставим как был, слегка подправим */
+    .theme-switch { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+    .switch { position: relative; display: inline-block; width: 56px; height: 32px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #aab2c8; transition: .3s; border-radius: 999px; }
+    .slider:before { content: ""; position: absolute; height: 24px; width: 24px; left: 4px; bottom: 4px; background: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background: var(--primary); }
+    input:checked + .slider:before { transform: translateX(24px); }
 
-    /* Блок справки */
-    #help-section {
-      display: none;
-      text-align: left;
-      margin-top: 20px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      background-color: #444;
-      color: #fff;
-    }
-    body:not(.night-mode) #help-section {
-      background-color: #f9f9f9;
-      color: #000;
-    }
+    /* Справка */
+    #help-section { display: none; text-align: left; margin-top: 10px; border: 1px dashed var(--border); padding: 12px; border-radius: 12px; background: transparent; }
   </style>
 </head>
 <body class="night-mode">
-<h1>Dictis (Все голоса Яндекс)</h1>
-<div id="timer">Время на странице: 0 секунд</div>
+  <div class="app">
+    <!-- Компактный верх: только поле + кнопка Старт -->
+    <div class="card">
+      <textarea id="text-input" placeholder="Введите текст…"></textarea>
+      <div id="sentence-display">
+        <div id="sentence-wrapper">
+          <div id="sentence-content"></div>
+        </div>
+      </div>
+      <div id="progress-container"><div id="progress-bar"></div></div>
+      <div id="indicator"></div>
+      <div class="actions">
+        <button id="start-stop-button">Старт</button>
+      </div>
+    </div>
 
-<textarea id="text-input" placeholder="Введите текст..."></textarea>
+    <!-- Спойлер со всеми настройками -->
+    <details class="settings">
+      <summary>
+        Настройки
+        <svg class="caret" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </summary>
+      <div class="settings-body">
+        <div id="timer">Время на странице: 0 секунд</div>
 
-<!-- Старый вид + "табличная" обёртка для вертикального центрирования -->
-<div id="sentence-display">
-  <div id="sentence-wrapper">
-    <div id="sentence-content"></div>
+        <!-- Голос -->
+        <div style="margin-top:8px">
+          <label for="voice-select">Голос:</label>
+          <select id="voice-select" style="margin-left:8px">
+            <option value="zahar" selected>Мужской</option>
+            <option value="jane">Женский</option>
+          </select>
+        </div>
+
+        <div class="controls">
+          <div class="control-group">
+            <label>Скорость предложений: <span id="sentence-speed-value">1.0x</span></label>
+            <input type="range" id="sentence-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
+          </div>
+          <div class="control-group">
+            <label>Скорость слов: <span id="word-speed-value">1.0x</span></label>
+            <input type="range" id="word-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
+          </div>
+          <div class="control-group">
+            <label>Скорость повторного чтения длинных слов: <span id="slow-word-speed-value">0.5x</span></label>
+            <input type="range" id="slow-word-speed-control" min="0.1" max="3.0" step="0.1" value="0.5">
+          </div>
+          <div class="control-group">
+            <label>Скорость вспомогательных выражений: <span id="aux-speed-value">1.0x</span></label>
+            <input type="range" id="aux-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
+          </div>
+          <div class="control-group">
+            <label>Громкость: <span id="volume-value">1.0</span></label>
+            <input type="range" id="volume-control" min="0" max="1" step="0.1" value="1.0">
+          </div>
+          <div class="control-group">
+            <label>Порог длинного слова (букв): <span id="long-word-threshold-value">7</span></label>
+            <input type="range" id="long-word-threshold" min="4" max="15" step="1" value="7">
+          </div>
+          <div class="control-group">
+            <label>Пауза между словами (мс): <span id="word-pause-value">200</span></label>
+            <input type="range" id="word-pause-control" min="0" max="3000" step="100" value="200">
+          </div>
+          <div class="control-group">
+            <label>Размер шрифта (текст): <span id="text-size-value">16px</span></label>
+            <input type="range" id="text-size-control" min="10" max="36" step="1" value="16">
+          </div>
+          <div class="control-group">
+            <label>Размер шрифта (диктовка): <span id="dictation-size-value">48px</span></label>
+            <input type="range" id="dictation-size-control" min="12" max="72" step="1" value="48">
+          </div>
+        </div>
+
+        <div class="additional-buttons">
+          <button id="paste-button">Вставить</button>
+          <button id="clear-button">Очистить</button>
+          <button id="reset-settings-button">Сброс настроек</button>
+        </div>
+
+        <div class="theme-switch">
+          <label class="switch">
+            <input type="checkbox" id="theme-toggle" checked>
+            <span class="slider"></span>
+          </label>
+          <label for="theme-toggle">Ночная тема</label>
+        </div>
+
+        <div style="margin-top:10px">
+          <button id="help-button">Справка</button>
+        </div>
+        <div id="help-section">
+          <h2>Справка и описание приложения</h2>
+          <p><strong>Dictis</strong> — это приложение для озвучивания введённого текста с помощью голосов Яндекс. Оно позволяет обучаться правильному произношению и разбирать тексты по словам и предложениям.</p>
+          <h3>Настройки:</h3>
+          <ul>
+            <li><strong>Голос</strong>: выбор между «Мужской (zahar)» и «Женский (jane)».</li>
+            <li><strong>Скорость предложений</strong>: общая скорость чтения целых предложений.</li>
+            <li><strong>Скорость слов</strong>: скорость произношения отдельных слов внутри предложения.</li>
+            <li><strong>Скорость повторного чтения длинных слов</strong>: если слово длиннее определённого порога, оно повторяется с другой скоростью.</li>
+            <li><strong>Скорость вспомогательных выражений</strong>: для "С большой буквы", "Новая строка" и т.п.</li>
+            <li><strong>Громкость</strong>: громкость (0 — без звука, 1 — максимум).</li>
+            <li><strong>Порог длинного слова (букв)</strong>: если слово длиннее заданного числа символов, оно повторяется.</li>
+            <li><strong>Пауза между словами (мс)</strong>: задержка между воспроизведением соседних слов.</li>
+            <li><strong>Размер шрифта (текст)</strong>: меняет размер шрифта в поле ввода.</li>
+            <li><strong>Размер шрифта (диктовка)</strong>: меняет размер шрифта у выводимого предложения во время диктовки.</li>
+          </ul>
+          <p><strong>Ночная тема</strong>: переключатель, меняет фон и цвет текста (по умолчанию включена).</p>
+          <p>Кнопка <em>«Сброс настроек»</em> возвращает все ползунки и тему к значениям по умолчанию. Настройки сохраняются в cookie на 365 дней.</p>
+        </div>
+      </div>
+    </details>
   </div>
-</div>
 
-<div id="progress-container">
-  <div id="progress-bar"></div>
-</div>
-<div id="indicator"></div>
+  <script>
+    /*************************************************************
+     *   Путь к вашему серверу TTS
+     *************************************************************/
+    const GLITCH_TTS_URL = "https://dictator-tts.rs-stigma.workers.dev/tts";
 
-<!-- Выпадающий список голосов -->
-<div>
-  <label for="voice-select">Голос:</label>
-  <select id="voice-select">
-    <option value="zahar" selected>Мужской</option>
-    <option value="jane">Женский</option>
-  </select>
-</div>
+    // Элементы
+    const textInput = document.getElementById('text-input');
+    const startStopButton = document.getElementById('start-stop-button');
+    const sentenceDisplay = document.getElementById('sentence-display');
+    const sentenceContent = document.getElementById('sentence-content');
 
-<div class="controls">
-  <!-- Диапазоны скоростей 0.1..3.0, как обсуждали -->
-  <div class="control-group">
-    <label>Скорость предложений: <span id="sentence-speed-value">1.0x</span></label>
-    <input type="range" id="sentence-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
-  </div>
-  <div class="control-group">
-    <label>Скорость слов: <span id="word-speed-value">1.0x</span></label>
-    <input type="range" id="word-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
-  </div>
-  <div class="control-group">
-    <label>Скорость повторного чтения длинных слов: <span id="slow-word-speed-value">0.5x</span></label>
-    <input type="range" id="slow-word-speed-control" min="0.1" max="3.0" step="0.1" value="0.5">
-  </div>
-  <div class="control-group">
-    <label>Скорость вспомогательных выражений: <span id="aux-speed-value">1.0x</span></label>
-    <input type="range" id="aux-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
-  </div>
-  <div class="control-group">
-    <label>Громкость: <span id="volume-value">1.0</span></label>
-    <input type="range" id="volume-control" min="0" max="1" step="0.1" value="1.0">
-  </div>
-  <div class="control-group">
-    <label>Порог длинного слова (букв): <span id="long-word-threshold-value">7</span></label>
-    <input type="range" id="long-word-threshold" min="4" max="15" step="1" value="7">
-  </div>
-  <div class="control-group">
-    <label>Пауза между словами (мс): <span id="word-pause-value">200</span></label>
-    <input type="range" id="word-pause-control" min="0" max="3000" step="100" value="200">
-  </div>
+    const voiceSelect = document.getElementById('voice-select');
+    
+    const sentenceSpeedControl = document.getElementById('sentence-speed-control');
+    const sentenceSpeedValue = document.getElementById('sentence-speed-value');
+    const wordSpeedControl = document.getElementById('word-speed-control');
+    const wordSpeedValue = document.getElementById('word-speed-value');
+    const slowWordSpeedControl = document.getElementById('slow-word-speed-control');
+    const slowWordSpeedValue = document.getElementById('slow-word-speed-value');
+    const auxSpeedControl = document.getElementById('aux-speed-control');
+    const auxSpeedValue = document.getElementById('aux-speed-value');
+    const volumeControl = document.getElementById('volume-control');
+    const volumeValue = document.getElementById('volume-value');
+    const longWordThresholdControl = document.getElementById('long-word-threshold');
+    const longWordThresholdValue = document.getElementById('long-word-threshold-value');
+    const wordPauseControl = document.getElementById('word-pause-control');
+    const wordPauseValue = document.getElementById('word-pause-value');
 
-  <!-- Две новые настройки размера шрифта -->
-  <div class="control-group">
-    <label>Размер шрифта (текст): <span id="text-size-value">16px</span></label>
-    <input type="range" id="text-size-control" min="10" max="36" step="1" value="16">
-  </div>
-  <div class="control-group">
-    <label>Размер шрифта (диктовка): <span id="dictation-size-value">48px</span></label>
-    <input type="range" id="dictation-size-control" min="12" max="72" step="1" value="48">
-  </div>
-</div>
-<br>
+    // Новые настройки размера шрифта:
+    const textSizeControl = document.getElementById('text-size-control');
+    const textSizeValue = document.getElementById('text-size-value');
+    const dictationSizeControl = document.getElementById('dictation-size-control');
+    const dictationSizeValue = document.getElementById('dictation-size-value');
 
-<div class="additional-buttons">
-  <button id="paste-button">Вставить</button>
-  <button id="clear-button">Очистить</button>
-  <button id="reset-settings-button">Сброс настроек</button>
-</div>
-<br>
+    const pasteButton = document.getElementById('paste-button');
+    const clearButton = document.getElementById('clear-button');
+    const resetButton = document.getElementById('reset-settings-button');
+    const timerDisplay = document.getElementById('timer');
+    const progressBar = document.getElementById('progress-bar');
+    const themeToggle = document.getElementById('theme-toggle');
+    const indicator = document.getElementById('indicator');
 
-<div class="theme-switch">
-  <label class="switch">
-    <input type="checkbox" id="theme-toggle" checked>
-    <span class="slider"></span>
-  </label>
-  <label for="theme-toggle">Ночная тема</label>
-</div>
-<br>
+    const helpButton = document.getElementById('help-button');
+    const helpSection = document.getElementById('help-section');
 
-<button id="start-stop-button">Старт</button>
-<button id="help-button">Справка</button>
+    let isSpeaking = false;
+    let speechStopped = false;
+    let originalText = '';
+    let sentences = [];
+    let currentSentenceIndex = 0;
+    let totalSentences = 0;
+    let timer = 0;
+    let timerInterval = null;
 
-<!-- Справка -->
-<div id="help-section">
-  <h2>Справка и описание приложения</h2>
-  <p><strong>Dictis</strong> — это приложение для озвучивания введённого текста с помощью голосов Яндекс. Оно позволяет обучаться правильному произношению и разбирать тексты по словам и предложениям.</p>
-  <h3>Настройки:</h3>
-  <ul>
-    <li><strong>Голос</strong>: выбор между «Мужской (zahar)» и «Женский (jane)».</li>
-    <li><strong>Скорость предложений</strong>: общая скорость чтения целых предложений.</li>
-    <li><strong>Скорость слов</strong>: скорость произношения отдельных слов внутри предложения.</li>
-    <li><strong>Скорость повторного чтения длинных слов</strong>: если слово длиннее определённого порога, оно повторяется с другой скоростью.</li>
-    <li><strong>Скорость вспомогательных выражений</strong>: для "С большой буквы", "Новая строка" и т.п.</li>
-    <li><strong>Громкость</strong>: громкость (0 — без звука, 1 — максимум).</li>
-    <li><strong>Порог длинного слова (букв)</strong>: если слово длиннее заданного числа символов, оно повторяется.</li>
-    <li><strong>Пауза между словами (мс)</strong>: задержка между воспроизведением соседних слов.</li>
-    <li><strong>Размер шрифта (текст)</strong>: меняет размер шрифта в поле ввода.</li>
-    <li><strong>Размер шрифта (диктовка)</strong>: меняет размер шрифта у выводимого предложения во время диктовки.</li>
-  </ul>
-  <p><strong>Ночная тема</strong>: переключатель, меняет фон и цвет текста (по умолчанию включена).</p>
-  <p>Кнопка <em>«Сброс настроек»</em> возвращает все ползунки и тему к значениям по умолчанию.  
-  Настройки сохраняются в cookie на 365 дней.</p>
-</div>
-
-<script>
-  /*************************************************************
-   *   Путь к вашему серверу TTS
-   *************************************************************/
-  const GLITCH_TTS_URL = "https://dictator-tts.rs-stigma.workers.dev/tts";
-
-  // Элементы
-  const textInput = document.getElementById('text-input');
-  const startStopButton = document.getElementById('start-stop-button');
-  const sentenceDisplay = document.getElementById('sentence-display');
-  const sentenceContent = document.getElementById('sentence-content');
-
-  const voiceSelect = document.getElementById('voice-select');
-  
-  const sentenceSpeedControl = document.getElementById('sentence-speed-control');
-  const sentenceSpeedValue = document.getElementById('sentence-speed-value');
-  const wordSpeedControl = document.getElementById('word-speed-control');
-  const wordSpeedValue = document.getElementById('word-speed-value');
-  const slowWordSpeedControl = document.getElementById('slow-word-speed-control');
-  const slowWordSpeedValue = document.getElementById('slow-word-speed-value');
-  const auxSpeedControl = document.getElementById('aux-speed-control');
-  const auxSpeedValue = document.getElementById('aux-speed-value');
-  const volumeControl = document.getElementById('volume-control');
-  const volumeValue = document.getElementById('volume-value');
-  const longWordThresholdControl = document.getElementById('long-word-threshold');
-  const longWordThresholdValue = document.getElementById('long-word-threshold-value');
-  const wordPauseControl = document.getElementById('word-pause-control');
-  const wordPauseValue = document.getElementById('word-pause-value');
-
-  // Новые настройки размера шрифта:
-  const textSizeControl = document.getElementById('text-size-control');
-  const textSizeValue = document.getElementById('text-size-value');
-  const dictationSizeControl = document.getElementById('dictation-size-control');
-  const dictationSizeValue = document.getElementById('dictation-size-value');
-
-  const pasteButton = document.getElementById('paste-button');
-  const clearButton = document.getElementById('clear-button');
-  const resetButton = document.getElementById('reset-settings-button');
-  const timerDisplay = document.getElementById('timer');
-  const progressBar = document.getElementById('progress-bar');
-  const themeToggle = document.getElementById('theme-toggle');
-  const indicator = document.getElementById('indicator');
-
-  const helpButton = document.getElementById('help-button');
-  const helpSection = document.getElementById('help-section');
-
-  let isSpeaking = false;
-  let speechStopped = false;
-  let originalText = '';
-  let sentences = [];
-  let currentSentenceIndex = 0;
-  let totalSentences = 0;
-  let timer = 0;
-  let timerInterval = null;
-
-  // Буквы => названия (двойная буква)
-  const letterSounds = {
-    'а': 'а', 'б': 'бэ', 'в': 'вэ', 'г': 'гэ', 'д': 'дэ', 'е': 'е', 'ё': 'ё',
-    'ж': 'же', 'з': 'зэ', 'и': 'и', 'й': 'и краткое', 'к': 'ка', 'л': 'эль',
-    'м': 'эм', 'н': 'эн', 'о': 'о', 'п': 'пэ', 'р': 'эр', 'с': 'эс', 'т': 'тэ',
-    'у': 'у', 'ф': 'эф', 'х': 'ха', 'ц': 'це', 'ч': 'че', 'ш': 'ша', 'щ': 'ща',
-    'ъ': 'твердый знак', 'ы': 'ы', 'ь': 'мягкий знак', 'э': 'э', 'ю': 'ю', 'я': 'я'
-  };
-
-  /*************************************************************
-   *   КУКИ (запоминание настроек)
-   *************************************************************/
-  function setCookie(name, value, days) {
-    const date = new Date();
-    date.setTime(date.getTime() + (days*24*60*60*1000));
-    const expires = "expires="+ date.toUTCString();
-    document.cookie = name + "=" + value + ";" + expires + ";path=/";
-  }
-  function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for(let i=0;i<ca.length;i++) {
-      let c = ca[i].trim();
-      if (c.indexOf(nameEQ) === 0) {
-        return c.substring(nameEQ.length,c.length);
-      }
-    }
-    return null;
-  }
-  function saveSettingsToCookies() {
-    const settings = {
-      sentenceSpeed: sentenceSpeedControl.value,
-      wordSpeed: wordSpeedControl.value,
-      slowWordSpeed: slowWordSpeedControl.value,
-      auxSpeed: auxSpeedControl.value,
-      volume: volumeControl.value,
-      longWordThreshold: longWordThresholdControl.value,
-      wordPause: wordPauseControl.value,
-      voice: voiceSelect.value,
-      nightMode: themeToggle.checked,
-
-      textSize: textSizeControl.value,        // Новый параметр: размер текста
-      dictationSize: dictationSizeControl.value  // Новый параметр: размер диктовки
+    // Буквы => названия (двойная буква)
+    const letterSounds = {
+      'а': 'а', 'б': 'бэ', 'в': 'вэ', 'г': 'гэ', 'д': 'дэ', 'е': 'е', 'ё': 'ё',
+      'ж': 'же', 'з': 'зэ', 'и': 'и', 'й': 'и краткое', 'к': 'ка', 'л': 'эль',
+      'м': 'эм', 'н': 'эн', 'о': 'о', 'п': 'пэ', 'р': 'эр', 'с': 'эс', 'т': 'тэ',
+      'у': 'у', 'ф': 'эф', 'х': 'ха', 'ц': 'це', 'ч': 'че', 'ш': 'ша', 'щ': 'ща',
+      'ъ': 'твердый знак', 'ы': 'ы', 'ь': 'мягкий знак', 'э': 'э', 'ю': 'ю', 'я': 'я'
     };
-    setCookie("dictisSettings", JSON.stringify(settings), 365);
-  }
 
-  function loadSettingsFromCookies() {
-    const data = getCookie("dictisSettings");
-    if (!data) return;
-    try {
-      const settings = JSON.parse(data);
-      if (settings.sentenceSpeed) {
-        sentenceSpeedControl.value = settings.sentenceSpeed;
-        sentenceSpeedValue.textContent = settings.sentenceSpeed + "x";
-      }
-      if (settings.wordSpeed) {
-        wordSpeedControl.value = settings.wordSpeed;
-        wordSpeedValue.textContent = settings.wordSpeed + "x";
-      }
-      if (settings.slowWordSpeed) {
-        slowWordSpeedControl.value = settings.slowWordSpeed;
-        slowWordSpeedValue.textContent = settings.slowWordSpeed + "x";
-      }
-      if (settings.auxSpeed) {
-        auxSpeedControl.value = settings.auxSpeed;
-        auxSpeedValue.textContent = settings.auxSpeed + "x";
-      }
-      if (settings.volume) {
-        volumeControl.value = settings.volume;
-        volumeValue.textContent = settings.volume;
-      }
-      if (settings.longWordThreshold) {
-        longWordThresholdControl.value = settings.longWordThreshold;
-        longWordThresholdValue.textContent = settings.longWordThreshold;
-      }
-      if (settings.wordPause) {
-        wordPauseControl.value = settings.wordPause;
-        wordPauseValue.textContent = settings.wordPause;
-      }
-      if (settings.voice) {
-        voiceSelect.value = settings.voice;
-      }
-      // Тема
-      if (typeof settings.nightMode === 'boolean') {
-        themeToggle.checked = settings.nightMode;
-        document.body.classList.toggle('night-mode', settings.nightMode);
-      }
-
-      // Новые параметры:
-      if (settings.textSize) {
-        textSizeControl.value = settings.textSize;
-        textSizeValue.textContent = settings.textSize + "px";
-        textInput.style.fontSize = settings.textSize + "px";
-      }
-      if (settings.dictationSize) {
-        dictationSizeControl.value = settings.dictationSize;
-        dictationSizeValue.textContent = settings.dictationSize + "px";
-        sentenceContent.style.fontSize = settings.dictationSize + "px";
-      }
-    } catch (err) {
-      console.error("Ошибка при парсинге куки настроек:", err);
+    /*************************************************************
+     *   КУКИ (запоминание настроек)
+     *************************************************************/
+    function setCookie(name, value, days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days*24*60*60*1000));
+      const expires = "expires="+ date.toUTCString();
+      document.cookie = name + "=" + value + ";" + expires + ";path=/";
     }
-  }
-
-  function resetSettings() {
-    // Удаляем куки
-    setCookie("dictisSettings", "", -1);
-    // Ставим значения по умолчанию
-    sentenceSpeedControl.value = "1.0";    sentenceSpeedValue.textContent = "1.0x";
-    wordSpeedControl.value = "1.0";       wordSpeedValue.textContent = "1.0x";
-    slowWordSpeedControl.value = "0.5";   slowWordSpeedValue.textContent = "0.5x";
-    auxSpeedControl.value = "1.0";        auxSpeedValue.textContent = "1.0x";
-    volumeControl.value = "1.0";          volumeValue.textContent = "1.0";
-    longWordThresholdControl.value = "7"; longWordThresholdValue.textContent = "7";
-    wordPauseControl.value = "200";       wordPauseValue.textContent = "200";
-    voiceSelect.value = "zahar";
-
-    // Шрифты:
-    textSizeControl.value = "16";
-    textSizeValue.textContent = "16px";
-    textInput.style.fontSize = "16px";
-
-    dictationSizeControl.value = "48";
-    dictationSizeValue.textContent = "48px";
-    sentenceContent.style.fontSize = "48px";
-
-    // Ночную тему делаем включённой
-    themeToggle.checked = true;
-    document.body.classList.add('night-mode');
-
-    // Сохраняем новые дефолты в куки
-    saveSettingsToCookies();
-  }
-
-  /*************************************************************
-   *   Обработчики контролов
-   *************************************************************/
-  sentenceSpeedControl.addEventListener('input', () => {
-    sentenceSpeedValue.textContent = sentenceSpeedControl.value + 'x';
-    saveSettingsToCookies();
-  });
-  wordSpeedControl.addEventListener('input', () => {
-    wordSpeedValue.textContent = wordSpeedControl.value + 'x';
-    saveSettingsToCookies();
-  });
-  slowWordSpeedControl.addEventListener('input', () => {
-    slowWordSpeedValue.textContent = slowWordSpeedControl.value + 'x';
-    saveSettingsToCookies();
-  });
-  auxSpeedControl.addEventListener('input', () => {
-    auxSpeedValue.textContent = auxSpeedControl.value + 'x';
-    saveSettingsToCookies();
-  });
-  volumeControl.addEventListener('input', () => {
-    volumeValue.textContent = volumeControl.value;
-    saveSettingsToCookies();
-  });
-  longWordThresholdControl.addEventListener('input', () => {
-    longWordThresholdValue.textContent = longWordThresholdControl.value;
-    saveSettingsToCookies();
-  });
-  wordPauseControl.addEventListener('input', () => {
-    wordPauseValue.textContent = wordPauseControl.value;
-    saveSettingsToCookies();
-  });
-  voiceSelect.addEventListener('change', () => {
-    saveSettingsToCookies();
-  });
-  themeToggle.addEventListener('change', () => {
-    document.body.classList.toggle('night-mode', themeToggle.checked);
-    saveSettingsToCookies();
-  });
-
-  // Новые ползунки размера шрифта
-  textSizeControl.addEventListener('input', () => {
-    textSizeValue.textContent = textSizeControl.value + "px";
-    textInput.style.fontSize = textSizeControl.value + "px";
-    saveSettingsToCookies();
-  });
-  dictationSizeControl.addEventListener('input', () => {
-    dictationSizeValue.textContent = dictationSizeControl.value + "px";
-    sentenceContent.style.fontSize = dictationSizeControl.value + "px";
-    saveSettingsToCookies();
-  });
-
-  pasteButton.addEventListener('click', async () => {
-    try {
-      const clipText = await navigator.clipboard.readText();
-      textInput.value += clipText;
-    } catch (err) {
-      alert("Не удалось вставить из буфера.");
-    }
-  });
-  clearButton.addEventListener('click', () => {
-    textInput.value = '';
-  });
-  resetButton.addEventListener('click', resetSettings);
-
-  helpButton.addEventListener('click', () => {
-    if (helpSection.style.display === 'none') {
-      helpSection.style.display = 'block';
-    } else {
-      helpSection.style.display = 'none';
-    }
-  });
-
-  /*************************************************************
-   *   СТАРТ/СТОП
-   *************************************************************/
-  startStopButton.addEventListener('click', () => {
-    if (!isSpeaking) {
-      originalText = textInput.value.trim();
-      // Заменяем ... на …
-      originalText = originalText.replace(/\.\.\./g, '…');
-
-      if (!originalText) {
-        alert("Введите текст!");
-        return;
-      }
-      sentences = splitIntoSentences(originalText);
-      totalSentences = sentences.length;
-      currentSentenceIndex = 0;
-      speechStopped = false;
-      isSpeaking = true;
-
-      textInput.style.display = 'none';
-      sentenceDisplay.style.display = 'block';
-      pasteButton.disabled = true;
-      clearButton.disabled = true;
-      resetButton.disabled = true;
-
-      speakSentence(sentences[currentSentenceIndex]);
-
-      startStopButton.textContent = 'Стоп';
-      startTimer();
-      updateProgressBar();
-    } else {
-      speechStopped = true;
-      restoreOriginalText();
-    }
-  });
-
-  function splitIntoSentences(text) {
-    const re = /(?<=[.!?]|\.{3}|…)\s+/;
-    return text.split(re).filter(s => s.trim().length > 0);
-  }
-  function splitIntoWords(sentence) {
-    return sentence.match(/[\wа-яА-ЯёЁ\-]+|[.,!?…()"'«»\[\]{}]+/g) || [sentence];
-  }
-  function isPunctuation(token) {
-    return /^[.,!?…()"'«»\[\]{}]+$/.test(token);
-  }
-
-  function isFirstSentence(i) {
-    return i === 0;
-  }
-  function isNewParagraph(i) {
-    if (i === 0) return false;
-    const lines = originalText.split('\n');
-    for (let n = 0; n < lines.length; n++) {
-      const line = lines[n].trim();
-      if (line.startsWith(sentences[i].trim())) {
-        if (n > 0 && lines[n - 1].trim() === '') {
-          return true;
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for(let i=0;i<ca.length;i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(nameEQ) === 0) {
+          return c.substring(nameEQ.length,c.length);
         }
       }
+      return null;
     }
-    return false;
-  }
-  function isNewLine(i) {
-    const lines = originalText.split('\n');
-    for (let n = 0; n < lines.length; n++) {
-      const line = lines[n].trim();
-      if (line.startsWith(sentences[i].trim())) {
-        if (n > 0 && lines[n - 1].trim() !== '') {
-          return true;
-        }
+    function saveSettingsToCookies() {
+      const settings = {
+        sentenceSpeed: sentenceSpeedControl.value,
+        wordSpeed: wordSpeedControl.value,
+        slowWordSpeed: slowWordSpeedControl.value,
+        auxSpeed: auxSpeedControl.value,
+        volume: volumeControl.value,
+        longWordThreshold: longWordThresholdControl.value,
+        wordPause: wordPauseControl.value,
+        voice: voiceSelect.value,
+        nightMode: themeToggle.checked,
+        textSize: textSizeControl.value,
+        dictationSize: dictationSizeControl.value
+      };
+      setCookie("dictisSettings", JSON.stringify(settings), 365);
+    }
+
+    function loadSettingsFromCookies() {
+      const data = getCookie("dictisSettings");
+      if (!data) return;
+      try {
+        const settings = JSON.parse(data);
+        if (settings.sentenceSpeed) { sentenceSpeedControl.value = settings.sentenceSpeed; sentenceSpeedValue.textContent = settings.sentenceSpeed + "x"; }
+        if (settings.wordSpeed) { wordSpeedControl.value = settings.wordSpeed; wordSpeedValue.textContent = settings.wordSpeed + "x"; }
+        if (settings.slowWordSpeed) { slowWordSpeedControl.value = settings.slowWordSpeed; slowWordSpeedValue.textContent = settings.slowWordSpeed + "x"; }
+        if (settings.auxSpeed) { auxSpeedControl.value = settings.auxSpeed; auxSpeedValue.textContent = settings.auxSpeed + "x"; }
+        if (settings.volume) { volumeControl.value = settings.volume; volumeValue.textContent = settings.volume; }
+        if (settings.longWordThreshold) { longWordThresholdControl.value = settings.longWordThreshold; longWordThresholdValue.textContent = settings.longWordThreshold; }
+        if (settings.wordPause) { wordPauseControl.value = settings.wordPause; wordPauseValue.textContent = settings.wordPause; }
+        if (settings.voice) { voiceSelect.value = settings.voice; }
+        if (typeof settings.nightMode === 'boolean') { themeToggle.checked = settings.nightMode; document.body.classList.toggle('night-mode', settings.nightMode); }
+        if (settings.textSize) { textSizeControl.value = settings.textSize; textSizeValue.textContent = settings.textSize + "px"; textInput.style.fontSize = settings.textSize + "px"; }
+        if (settings.dictationSize) { dictationSizeControl.value = settings.dictationSize; dictationSizeValue.textContent = settings.dictationSize + "px"; sentenceContent.style.fontSize = settings.dictationSize + "px"; }
+      } catch (err) {
+        console.error("Ошибка при парсинге куки настроек:", err);
       }
     }
-    return false;
-  }
 
-  function getAuxExpressions(word) {
-    const exps = [];
-    const dbl = getDoubleLetterName(word);
-    if (dbl) exps.push(dbl);
-    if (word.includes('-')) exps.push('Через дефис');
-    return exps;
-  }
-  function getDoubleLetterName(word) {
-    for (let i = 1; i < word.length; i++) {
-      const a = word[i - 1].toLowerCase();
-      const b = word[i].toLowerCase();
-      if (a === b && letterSounds[a]) {
-        return 'Через две ' + letterSounds[a];
-      }
+    function resetSettings() {
+      setCookie("dictisSettings", "", -1);
+      sentenceSpeedControl.value = "1.0";    sentenceSpeedValue.textContent = "1.0x";
+      wordSpeedControl.value = "1.0";       wordSpeedValue.textContent = "1.0x";
+      slowWordSpeedControl.value = "0.5";   slowWordSpeedValue.textContent = "0.5x";
+      auxSpeedControl.value = "1.0";        auxSpeedValue.textContent = "1.0x";
+      volumeControl.value = "1.0";          volumeValue.textContent = "1.0";
+      longWordThresholdControl.value = "7"; longWordThresholdValue.textContent = "7";
+      wordPauseControl.value = "200";       wordPauseValue.textContent = "200";
+      voiceSelect.value = "zahar";
+      textSizeControl.value = "16"; textSizeValue.textContent = "16px"; textInput.style.fontSize = "16px";
+      dictationSizeControl.value = "48"; dictationSizeValue.textContent = "48px"; sentenceContent.style.fontSize = "48px";
+      themeToggle.checked = true; document.body.classList.add('night-mode');
+      saveSettingsToCookies();
     }
-    return null;
-  }
 
-  /*************************************************************
-   *   ОЗВУЧИВАНИЕ
-   *************************************************************/
-  function speakSentence(sentence) {
-    if (speechStopped) return;
-    const words = splitIntoWords(sentence);
-    // Ставим токены, разделённые пробелами
-    const html = words.map((w, i) => `<span id="word-${i}">${w}</span>`).join(' ');
-    sentenceContent.innerHTML = html;
+    /*************************************************************
+     *   Обработчики контролов
+     *************************************************************/
+    sentenceSpeedControl.addEventListener('input', () => { sentenceSpeedValue.textContent = sentenceSpeedControl.value + 'x'; saveSettingsToCookies(); });
+    wordSpeedControl.addEventListener('input', () => { wordSpeedValue.textContent = wordSpeedControl.value + 'x'; saveSettingsToCookies(); });
+    slowWordSpeedControl.addEventListener('input', () => { slowWordSpeedValue.textContent = slowWordSpeedControl.value + 'x'; saveSettingsToCookies(); });
+    auxSpeedControl.addEventListener('input', () => { auxSpeedValue.textContent = auxSpeedControl.value + 'x'; saveSettingsToCookies(); });
+    volumeControl.addEventListener('input', () => { volumeValue.textContent = volumeControl.value; saveSettingsToCookies(); });
+    longWordThresholdControl.addEventListener('input', () => { longWordThresholdValue.textContent = longWordThresholdControl.value; saveSettingsToCookies(); });
+    wordPauseControl.addEventListener('input', () => { wordPauseValue.textContent = wordPauseControl.value; saveSettingsToCookies(); });
+    voiceSelect.addEventListener('change', () => { saveSettingsToCookies(); });
+    themeToggle.addEventListener('change', () => { document.body.classList.toggle('night-mode', themeToggle.checked); saveSettingsToCookies(); });
 
-    const voice = voiceSelect.value;
+    textSizeControl.addEventListener('input', () => { textSizeValue.textContent = textSizeControl.value + "px"; textInput.style.fontSize = textSizeControl.value + "px"; saveSettingsToCookies(); });
+    dictationSizeControl.addEventListener('input', () => { dictationSizeValue.textContent = dictationSizeControl.value + "px"; sentenceContent.style.fontSize = dictationSizeControl.value + "px"; saveSettingsToCookies(); });
 
-    yandexTtsPlay(
-      sentence, 
-      parseFloat(sentenceSpeedControl.value), 
-      parseFloat(volumeControl.value), 
-      voice, 
-      () => {
-        if (!speechStopped) {
-          speakWords(words, currentSentenceIndex).then(() => {
-            updateProgressBar();
-            if (currentSentenceIndex === sentences.length - 1 && !speechStopped) {
-              playNotificationSound();
-              speakFinalExpression();
-            } else {
-              currentSentenceIndex++;
-              if (currentSentenceIndex < sentences.length && !speechStopped) {
-                speakSentence(sentences[currentSentenceIndex]);
-              } else {
-                restoreOriginalText();
-              }
-            }
-          });
-        }
-      }
-    );
-  }
-
-  function speakWords(words, sentIndex) {
-    return new Promise(resolve => {
-      let wordIndex = 0;
-      function speakNext() {
-        if (speechStopped) { resolve(); return; }
-        if (wordIndex >= words.length) { resolve(); return; }
-
-        const token = words[wordIndex];
-        const isPunctTok = isPunctuation(token);
-        const isCapitalized = /^[А-ЯЁ]/.test(token);
-        const longWordTh = parseInt(longWordThresholdControl.value, 10);
-        const isLongWord = !isPunctTok && token.length >= longWordTh;
-
-        let prependText = '';
-        if (wordIndex === 0) {
-          if (isNewParagraph(sentIndex)) prependText = 'Новый абзац';
-          else if (isNewLine(sentIndex)) prependText = 'Новая строка';
-        }
-
-        function stepPrepend(cb) {
-          if (prependText && !isFirstSentence(sentIndex)) {
-            indicator.textContent = prependText;
-            indicator.classList.add('visible');
-            setTimeout(() => indicator.classList.remove('visible'), 2000);
-
-            yandexTtsPlay(
-              prependText, 
-              parseFloat(auxSpeedControl.value), 
-              parseFloat(volumeControl.value), 
-              voiceSelect.value, 
-              () => { cb(); }
-            );
-          } else {
-            cb();
-          }
-        }
-        function stepCapital(cb) {
-          if (!isPunctTok && isCapitalized) {
-            yandexTtsPlay(
-              'С большой буквы', 
-              parseFloat(auxSpeedControl.value), 
-              parseFloat(volumeControl.value), 
-              voiceSelect.value, 
-              () => { cb(); }
-            );
-          } else {
-            cb();
-          }
-        }
-        function stepReadToken(cb) {
-          highlightWord(wordIndex);
-          if (isPunctTok) {
-            speakPunctuation(token, wordIndex, () => {
-              cb();
-            });
-          } else if (isLongWord) {
-            yandexTtsPlay(
-              token, 
-              parseFloat(wordSpeedControl.value), 
-              parseFloat(volumeControl.value), 
-              voiceSelect.value, 
-              () => {
-                const aux = getAuxExpressions(token);
-                speakAuxExpressions(aux, () => {
-                  yandexTtsPlay(
-                    token, 
-                    parseFloat(slowWordSpeedControl.value), 
-                    parseFloat(volumeControl.value), 
-                    voiceSelect.value, 
-                    () => {
-                      unhighlightWord(wordIndex);
-                      cb();
-                    }
-                  );
-                });
-              }
-            );
-          } else {
-            yandexTtsPlay(
-              token, 
-              parseFloat(wordSpeedControl.value), 
-              parseFloat(volumeControl.value), 
-              voiceSelect.value, 
-              () => {
-                unhighlightWord(wordIndex);
-                const aux = getAuxExpressions(token);
-                speakAuxExpressions(aux, () => {
-                  cb();
-                });
-              }
-            );
-          }
-        }
-
-        stepPrepend(() => {
-          if (speechStopped) { resolve(); return; }
-          stepCapital(() => {
-            if (speechStopped) { resolve(); return; }
-            stepReadToken(() => {
-              if (speechStopped) { resolve(); return; }
-              const nextI = wordIndex + 1;
-              if (nextI < words.length) {
-                const nextTok = words[nextI];
-                if (isPunctTok && isPunctuation(nextTok)) {
-                  // Пауза 200 мс для знаков препинания
-                  setTimeout(() => {
-                    wordIndex++;
-                    speakNext();
-                  }, 200);
-                } else if (!isPunctuation(nextTok)) {
-                  // Настраиваемая пауза
-                  const pause = parseInt(wordPauseControl.value, 10) || 0;
-                  setTimeout(() => {
-                    wordIndex++;
-                    speakNext();
-                  }, pause);
-                } else {
-                  wordIndex++;
-                  speakNext();
-                }
-              } else {
-                resolve();
-              }
-            });
-          });
-        });
-      }
-      speakNext();
+    pasteButton.addEventListener('click', async () => {
+      try { const clipText = await navigator.clipboard.readText(); textInput.value += clipText; }
+      catch (err) { alert("Не удалось вставить из буфера."); }
     });
-  }
+    clearButton.addEventListener('click', () => { textInput.value = ''; });
+    resetButton.addEventListener('click', resetSettings);
 
-  // TTS-прокси
-  function yandexTtsPlay(text, speed, volume, voice, callback) {
-    if (!text || !text.trim()) {
-      callback();
-      return;
-    }
-    if (speed < 0.1) speed = 0.1;
-    if (speed > 3.0) speed = 3.0;
+    helpButton.addEventListener('click', () => { helpSection.style.display = (helpSection.style.display === 'none') ? 'block' : 'none'; });
 
-    fetch(GLITCH_TTS_URL, {
-      method: 'POST',
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, speed, voice })
-    })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error("Ответ TTS не OK: " + res.status);
+    /*************************************************************
+     *   СТАРТ/СТОП
+     *************************************************************/
+    startStopButton.addEventListener('click', () => {
+      if (!isSpeaking) {
+        originalText = textInput.value.trim();
+        originalText = originalText.replace(/\.\.\./g, '…');
+        if (!originalText) { alert("Введите текст!"); return; }
+        sentences = splitIntoSentences(originalText);
+        totalSentences = sentences.length;
+        currentSentenceIndex = 0;
+        speechStopped = false;
+        isSpeaking = true;
+
+        // Добавили класс, чтобы показать прогресс-бар только во время диктовки
+        document.body.classList.add('speaking');
+
+        textInput.style.display = 'none';
+        sentenceDisplay.style.display = 'block';
+        pasteButton.disabled = true; clearButton.disabled = true; resetButton.disabled = true;
+
+        speakSentence(sentences[currentSentenceIndex]);
+        startStopButton.textContent = 'Стоп';
+        startTimer();
+        updateProgressBar();
+      } else {
+        speechStopped = true;
+        restoreOriginalText();
       }
-      return res.blob();
-    })
-    .then(blob => {
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.volume = volume;
-      audio.onended = () => callback();
-      audio.onerror = () => callback();
-      audio.play().catch(err => {
-        console.error("Ошибка audio.play():", err);
-        callback();
-      });
-    })
-    .catch(err => {
-      console.error("Ошибка fetch TTS:", err);
-      callback();
     });
-  }
 
-  function speakAuxExpressions(expressions, cb) {
-    if (!expressions || expressions.length === 0) {
-      cb(); return;
+    function splitIntoSentences(text) {
+      const re = /(?<=[.!?]|\.{3}|…)\s+/;
+      return text.split(re).filter(s => s.trim().length > 0);
     }
-    let i = 0;
-    function next() {
-      if (i >= expressions.length) {
-        cb();return;
+    function splitIntoWords(sentence) {
+      return sentence.match(/[\wа-яА-ЯёЁ\-]+|[.,!?…()"'«»\[\]{}]+/g) || [sentence];
+    }
+    function isPunctuation(token) {
+      return /^[.,!?…()"'«»\[\]{}]+$/.test(token);
+    }
+
+    function isFirstSentence(i) { return i === 0; }
+    function isNewParagraph(i) {
+      if (i === 0) return false;
+      const lines = originalText.split('\n');
+      for (let n = 0; n < lines.length; n++) {
+        const line = lines[n].trim();
+        if (line.startsWith(sentences[i].trim())) {
+          if (n > 0 && lines[n - 1].trim() === '') { return true; }
+        }
       }
-      const text = expressions[i];
+      return false;
+    }
+    function isNewLine(i) {
+      const lines = originalText.split('\n');
+      for (let n = 0; n < lines.length; n++) {
+        const line = lines[n].trim();
+        if (line.startsWith(sentences[i].trim())) {
+          if (n > 0 && lines[n - 1].trim() !== '') { return true; }
+        }
+      }
+      return false;
+    }
+
+    function getAuxExpressions(word) {
+      const exps = [];
+      const dbl = getDoubleLetterName(word);
+      if (dbl) exps.push(dbl);
+      if (word.includes('-')) exps.push('Через дефис');
+      return exps;
+    }
+    function getDoubleLetterName(word) {
+      for (let i = 1; i < word.length; i++) {
+        const a = word[i - 1].toLowerCase();
+        const b = word[i].toLowerCase();
+        if (a === b && letterSounds[a]) { return 'Через две ' + letterSounds[a]; }
+      }
+      return null;
+    }
+
+    /*************************************************************
+     *   ОЗВУЧИВАНИЕ
+     *************************************************************/
+    function speakSentence(sentence) {
+      if (speechStopped) return;
+      const words = splitIntoWords(sentence);
+      const html = words.map((w, i) => `<span id="word-${i}">${w}</span>`).join(' ');
+      sentenceContent.innerHTML = html;
+      const voice = voiceSelect.value;
+
       yandexTtsPlay(
-        text, 
-        parseFloat(auxSpeedControl.value), 
-        parseFloat(volumeControl.value), 
-        voiceSelect.value, 
+        sentence,
+        parseFloat(sentenceSpeedControl.value),
+        parseFloat(volumeControl.value),
+        voice,
         () => {
-          i++;
-          next();
+          if (!speechStopped) {
+            speakWords(words, currentSentenceIndex).then(() => {
+              updateProgressBar();
+              if (currentSentenceIndex === sentences.length - 1 && !speechStopped) {
+                playNotificationSound();
+                speakFinalExpression();
+              } else {
+                currentSentenceIndex++;
+                if (currentSentenceIndex < sentences.length && !speechStopped) {
+                  speakSentence(sentences[currentSentenceIndex]);
+                } else {
+                  restoreOriginalText();
+                }
+              }
+            });
+          }
         }
       );
     }
-    next();
-  }
-  function speakPunctuation(punct, index, cb) {
-    const map = {
-      '.': 'Точка', 
-      ',': 'Запятая',
-      '!': 'Восклицательный знак',
-      '?': 'Вопросительный знак',
-      '…': 'Многоточие',
-      '(': 'Открывающая скобка',
-      ')': 'Закрывающая скобка',
-      '"': 'Кавычка',
-      "'": 'Кавычка',
-      '«': 'Открывающая кавычка',
-      '»': 'Закрывающая кавычка',
-      '[': 'Открывающая квадратная скобка',
-      ']': 'Закрывающая квадратная',
-      '{': 'Открывающая фигурная',
-      '}': 'Закрывающая фигурная'
-    };
-    const txt = map[punct] || punct;
 
-    yandexTtsPlay(
-      txt, 
-      parseFloat(auxSpeedControl.value), 
-      parseFloat(volumeControl.value), 
-      voiceSelect.value, 
-      () => {
-        unhighlightWord(index);
-        cb();
-      }
-    );
-  }
+    function speakWords(words, sentIndex) {
+      return new Promise(resolve => {
+        let wordIndex = 0;
+        function speakNext() {
+          if (speechStopped) { resolve(); return; }
+          if (wordIndex >= words.length) { resolve(); return; }
 
-  function highlightWord(i) {
-    const sp = document.getElementById(`word-${i}`);
-    if (sp) sp.classList.add('highlight');
-  }
-  function unhighlightWord(i) {
-    const sp = document.getElementById(`word-${i}`);
-    if (sp) sp.classList.remove('highlight');
-  }
+          const token = words[wordIndex];
+          const isPunctTok = isPunctuation(token);
+          const isCapitalized = /^[А-ЯЁ]/.test(token);
+          const longWordTh = parseInt(longWordThresholdControl.value, 10);
+          const isLongWord = !isPunctTok && token.length >= longWordTh;
 
-  function restoreOriginalText() {
-    speechStopped = true;
-    sentenceDisplay.style.display = 'none';
-    textInput.style.display = 'block';
-    textInput.value = originalText;
-    startStopButton.textContent = 'Старт';
-    pasteButton.disabled = false;
-    clearButton.disabled = false;
-    resetButton.disabled = false;
-    isSpeaking = false;
+          let prependText = '';
+          if (wordIndex === 0) {
+            if (isNewParagraph(sentIndex)) prependText = 'Новый абзац';
+            else if (isNewLine(sentIndex)) prependText = 'Новая строка';
+          }
 
-    stopTimer();
-    resetProgressBar();
-    indicator.textContent = '';
-    indicator.classList.remove('visible');
-  }
-  function startTimer() {
-    timer = 0;
-    timerDisplay.textContent = `Время на странице: ${timer} секунд`;
-    timerInterval = setInterval(() => {
-      timer++;
-      timerDisplay.textContent = `Время на странице: ${timer} секунд`;
-    }, 1000);
-  }
-  function stopTimer() {
-    clearInterval(timerInterval);
-  }
-  function updateProgressBar() {
-    const p = ((currentSentenceIndex + 1) / totalSentences) * 100;
-    progressBar.style.width = p + '%';
-  }
-  function resetProgressBar() {
-    progressBar.style.width = '0%';
-  }
+          function stepPrepend(cb) {
+            if (prependText && !isFirstSentence(sentIndex)) {
+              indicator.textContent = prependText;
+              indicator.classList.add('visible');
+              setTimeout(() => indicator.classList.remove('visible'), 2000);
+              yandexTtsPlay(
+                prependText,
+                parseFloat(auxSpeedControl.value),
+                parseFloat(volumeControl.value),
+                voiceSelect.value,
+                () => { cb(); }
+              );
+            } else { cb(); }
+          }
+          function stepCapital(cb) {
+            if (!isPunctTok && isCapitalized) {
+              yandexTtsPlay(
+                'С большой буквы',
+                parseFloat(auxSpeedControl.value),
+                parseFloat(volumeControl.value),
+                voiceSelect.value,
+                () => { cb(); }
+              );
+            } else { cb(); }
+          }
+          function stepReadToken(cb) {
+            highlightWord(wordIndex);
+            if (isPunctTok) {
+              speakPunctuation(token, wordIndex, () => { cb(); });
+            } else if (isLongWord) {
+              yandexTtsPlay(
+                token,
+                parseFloat(wordSpeedControl.value),
+                parseFloat(volumeControl.value),
+                voiceSelect.value,
+                () => {
+                  const aux = getAuxExpressions(token);
+                  speakAuxExpressions(aux, () => {
+                    yandexTtsPlay(
+                      token,
+                      parseFloat(slowWordSpeedControl.value),
+                      parseFloat(volumeControl.value),
+                      voiceSelect.value,
+                      () => { unhighlightWord(wordIndex); cb(); }
+                    );
+                  });
+                }
+              );
+            } else {
+              yandexTtsPlay(
+                token,
+                parseFloat(wordSpeedControl.value),
+                parseFloat(volumeControl.value),
+                voiceSelect.value,
+                () => { unhighlightWord(wordIndex); const aux = getAuxExpressions(token); speakAuxExpressions(aux, () => { cb(); }); }
+              );
+            }
+          }
 
-  function playNotificationSound() {
-    const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-    audio.play().catch(e => console.error("bell error", e));
-  }
-  function speakFinalExpression() {
-    yandexTtsPlay(
-      'Конспект окончен',
-      parseFloat(auxSpeedControl.value),
-      parseFloat(volumeControl.value),
-      voiceSelect.value,
-      () => {
-        restoreOriginalText();
-      }
-    );
-  }
+          stepPrepend(() => {
+            if (speechStopped) { resolve(); return; }
+            stepCapital(() => {
+              if (speechStopped) { resolve(); return; }
+              stepReadToken(() => {
+                if (speechStopped) { resolve(); return; }
+                const nextI = wordIndex + 1;
+                if (nextI < words.length) {
+                  const nextTok = words[nextI];
+                  if (isPunctTok && isPunctuation(nextTok)) {
+                    setTimeout(() => { wordIndex++; speakNext(); }, 200);
+                  } else if (!isPunctuation(nextTok)) {
+                    const pause = parseInt(wordPauseControl.value, 10) || 0;
+                    setTimeout(() => { wordIndex++; speakNext(); }, pause);
+                  } else { wordIndex++; speakNext(); }
+                } else { resolve(); }
+              });
+            });
+          });
+        }
+        speakNext();
+      });
+    }
 
-  // При загрузке страницы восстанавливаем сохранённые настройки
-  loadSettingsFromCookies();
-</script>
+    // TTS-прокси
+    function yandexTtsPlay(text, speed, volume, voice, callback) {
+      if (!text || !text.trim()) { callback(); return; }
+      if (speed < 0.1) speed = 0.1; if (speed > 3.0) speed = 3.0;
+      fetch(GLITCH_TTS_URL, { method: 'POST', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, speed, voice }) })
+      .then(res => { if (!res.ok) { throw new Error("Ответ TTS не OK: " + res.status); } return res.blob(); })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.volume = volume;
+        audio.onended = () => callback();
+        audio.onerror = () => callback();
+        audio.play().catch(err => { console.error("Ошибка audio.play():", err); callback(); });
+      })
+      .catch(err => { console.error("Ошибка fetch TTS:", err); callback(); });
+    }
+
+    function speakAuxExpressions(expressions, cb) {
+      if (!expressions || expressions.length === 0) { cb(); return; }
+      let i = 0; (function next(){ if (i >= expressions.length) { cb(); return; } const text = expressions[i]; yandexTtsPlay(text, parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { i++; next(); }); })();
+    }
+    function speakPunctuation(punct, index, cb) {
+      const map = { '.': 'Точка', ',': 'Запятая', '!': 'Восклицательный знак', '?': 'Вопросительный знак', '…': 'Многоточие', '(': 'Открывающая скобка', ')': 'Закрывающая скобка', '"': 'Кавычка', "'": 'Кавычка', '«': 'Открывающая кавычка', '»': 'Закрывающая кавычка', '[': 'Открывающая квадратная скобка', ']': 'Закрывающая квадратная', '{': 'Открывающая фигурная', '}': 'Закрывающая фигурная' };
+      const txt = map[punct] || punct;
+      yandexTtsPlay(txt, parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { unhighlightWord(index); cb(); });
+    }
+
+    function highlightWord(i) { const sp = document.getElementById(`word-${i}`); if (sp) sp.classList.add('highlight'); }
+    function unhighlightWord(i) { const sp = document.getElementById(`word-${i}`); if (sp) sp.classList.remove('highlight'); }
+
+    function restoreOriginalText() {
+      speechStopped = true;
+      sentenceDisplay.style.display = 'none';
+      textInput.style.display = 'block';
+      textInput.value = originalText;
+      startStopButton.textContent = 'Старт';
+      pasteButton.disabled = false; clearButton.disabled = false; resetButton.disabled = false;
+      isSpeaking = false;
+
+      // Скрываем прогресс-бар после завершения
+      document.body.classList.remove('speaking');
+
+      stopTimer();
+      resetProgressBar();
+      indicator.textContent = '';
+      indicator.classList.remove('visible');
+    }
+    function startTimer() { timer = 0; timerDisplay.textContent = `Время на странице: ${timer} секунд`; timerInterval = setInterval(() => { timer++; timerDisplay.textContent = `Время на странице: ${timer} секунд`; }, 1000); }
+    function stopTimer() { clearInterval(timerInterval); }
+    function updateProgressBar() { const p = ((currentSentenceIndex + 1) / totalSentences) * 100; progressBar.style.width = p + '%'; }
+    function resetProgressBar() { progressBar.style.width = '0%'; }
+
+    function playNotificationSound() { const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); audio.play().catch(e => console.error('bell error', e)); }
+    function speakFinalExpression() { yandexTtsPlay('Конспект окончен', parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { restoreOriginalText(); }); }
+
+    // При загрузке — восстановить настройки
+    loadSettingsFromCookies();
+  </script>
 </body>
 </html>
