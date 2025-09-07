@@ -17,6 +17,8 @@
       --border: #e5e7eb;
       --radius: 14px;
       --shadow: 0 8px 30px rgba(0,0,0,.08);
+      --highlight-bg: #fff1a6; /* мягкая жёлтая плашка для дневной темы */
+      --highlight-fg: #111111; /* тёмный текст для контраста */
     }
     body.night-mode {
       --bg: #0f1220;
@@ -28,6 +30,8 @@
       --accent: #76c7c0;
       --border: #262a40;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --highlight-bg: #2a2f46; /* плашка для ночной темы */
+      --highlight-fg: #f7f7fb; /* светлый текст на тёмном фоне */
     }
 
     * { box-sizing: border-box; }
@@ -107,14 +111,14 @@
     }
 
     .highlight {
-      background: var(--hl-bg);
-      color: var(--hl-fg);
-      padding: 2px 4px;
+      background: var(--highlight-bg);
+      color: var(--highlight-fg) !important;
+      font-weight: 700;
+      text-decoration: none;
+      text-shadow: none;
       border-radius: 6px;
-      text-decoration: underline;
-      text-decoration-thickness: 2px;
-      text-underline-offset: 3px;
-      text-shadow: var(--hl-shadow);
+      padding: 2px 4px;
+      box-shadow: 0 0 0 2px var(--highlight-bg);
     }
 
     /* Прогресс и индикаторы — скрыты, пока не идёт диктовка */
@@ -338,12 +342,7 @@
     const helpSection = document.getElementById('help-section');
 
     let isSpeaking = false;
-      isPaused = false; resumeQueue = [];
-      if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
     let speechStopped = false;
-    let isPaused = false;
-    let resumeQueue = [];
-    let currentAudio = null;
     let originalText = '';
     let sentences = [];
     let currentSentenceIndex = 0;
@@ -394,11 +393,12 @@
         textSize: textSizeControl.value,
         dictationSize: dictationSizeControl.value
       };
-      setCookie("dictatorSettings", JSON.stringify(settings), 365);
+      setCookie("dictatorSettings", JSON.stringify(settings), 365); setCookie("dictatorSettings", "", -1);
+      setCookie("dictisSettings", "", -1);
     }
 
     function loadSettingsFromCookies() {
-      const data = getCookie("dictatorSettings");
+      const data = getCookie("dictatorSettings") || getCookie("dictisSettings");
       if (!data) return;
       try {
         const settings = JSON.parse(data);
@@ -420,6 +420,7 @@
 
     function resetSettings() {
       setCookie("dictatorSettings", "", -1);
+      setCookie("dictisSettings", "", -1);
       sentenceSpeedControl.value = "1.0";    sentenceSpeedValue.textContent = "1.0x";
       wordSpeedControl.value = "1.0";       wordSpeedValue.textContent = "1.0x";
       slowWordSpeedControl.value = "0.5";   slowWordSpeedValue.textContent = "0.5x";
@@ -457,56 +458,7 @@
     clearButton.addEventListener('click', () => { textInput.value = ''; });
     resetButton.addEventListener('click', resetSettings);
 
-    // Автосохранение текста
-    function saveText(){ try { localStorage.setItem('dictatorText', textInput.value || ''); } catch(e){} }
-    function loadText(){ try { const t = localStorage.getItem('dictatorText'); if (t !== null) textInput.value = t; } catch(e){} }
-    textInput.addEventListener('input', saveText);
-    window.addEventListener('beforeunload', saveText);
-    clearButton.addEventListener('click', () => { try { localStorage.setItem('dictatorText',''); } catch(e){} });
-
-    helpButton.addEventListener('click', () => {
-      const isHidden = getComputedStyle(helpSection).display === 'none';
-      helpSection.style.display = isHidden ? 'block' : 'none';
-    });
-
-    // Пауза/возобновление пробелом (ПК)
-    function pauseSpeech(){
-      if (!isSpeaking || isPaused) return;
-      isPaused = true;
-      if (currentAudio) { try { currentAudio.pause(); } catch(e){} }
-      indicator.textContent = 'Пауза';
-      indicator.classList.add('visible');
-    }
-    function resumeSpeech(){
-      if (!isSpeaking || !isPaused) return;
-      isPaused = false;
-      if (currentAudio) { currentAudio.play().catch(()=>{}); }
-      indicator.textContent = '';
-      indicator.classList.remove('visible');
-      const q = resumeQueue.slice(); resumeQueue = [];
-      q.forEach(fn => { if (!speechStopped) fn(); });
-    }
-    function togglePauseOrStart(){
-      if (!isSpeaking) { startStopButton.click(); return; }
-      if (isPaused) resumeSpeech(); else pauseSpeech();
-    }
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !e.repeat) {
-        const ae = document.activeElement;
-        const typing = ae && (ae === textInput || (ae.tagName === 'INPUT' && ae.type === 'text'));
-        if (!typing) { e.preventDefault(); togglePauseOrStart(); }
-      }
-    });
-
-    // Планировщик, учитывающий паузу
-    function deferOrRun(fn, delay){
-      if (isPaused) { resumeQueue.push(() => { if (!speechStopped) fn(); }); return; }
-      if (!delay) { if (!speechStopped) fn(); return; }
-      setTimeout(() => {
-        if (isPaused) resumeQueue.push(() => { if (!speechStopped) fn(); });
-        else if (!speechStopped) fn();
-      }, delay);
-    }
+    helpButton.addEventListener('click', () => { const hidden = getComputedStyle(helpSection).display === 'none'; helpSection.style.display = hidden ? 'block' : 'none'; });
 
     /*************************************************************
      *   СТАРТ/СТОП
@@ -713,10 +665,10 @@
                 if (nextI < words.length) {
                   const nextTok = words[nextI];
                   if (isPunctTok && isPunctuation(nextTok)) {
-                    deferOrRun(() => { wordIndex++; speakNext(); }, 200);
+                    setTimeout(() => { wordIndex++; speakNext(); }, 200);
                   } else if (!isPunctuation(nextTok)) {
                     const pause = parseInt(wordPauseControl.value, 10) || 0;
-                    deferOrRun(() => { wordIndex++; speakNext(); }, pause);
+                    setTimeout(() => { wordIndex++; speakNext(); }, pause);
                   } else { wordIndex++; speakNext(); }
                 } else { resolve(); }
               });
@@ -737,11 +689,9 @@
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.volume = volume;
-        currentAudio = audio;
-        audio.onended = () => { const run = () => callback(); if (isPaused) resumeQueue.push(run); else run(); };
-        audio.onerror = () => { const run = () => callback(); if (isPaused) resumeQueue.push(run); else run(); };
-        if (isPaused) { resumeQueue.push(() => { try { audio.play().catch(()=>{}); } catch(e){} }); }
-        else { audio.play().catch(err => { console.error('Ошибка audio.play():', err); callback(); }); }
+        audio.onended = () => callback();
+        audio.onerror = () => callback();
+        audio.play().catch(err => { console.error("Ошибка audio.play():", err); callback(); });
       })
       .catch(err => { console.error("Ошибка fetch TTS:", err); callback(); });
     }
@@ -786,7 +736,6 @@
 
     // При загрузке — восстановить настройки
     loadSettingsFromCookies();
-    loadText();
   </script>
 </body>
 </html>
