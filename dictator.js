@@ -25,6 +25,9 @@
     const longWordThresholdValue = document.getElementById('long-word-threshold-value');
     const wordPauseControl = document.getElementById('word-pause-control');
     const wordPauseValue = document.getElementById('word-pause-value');
+    const symbolPauseControl = document.getElementById('symbol-pause-control');
+    const symbolPauseValue = document.getElementById('symbol-pause-value');
+    const speakSymbolsToggle = document.getElementById('speak-symbols-toggle');
 
     
     window.addEventListener('keydown', (e) => {
@@ -203,11 +206,13 @@
         volume: volumeControl.value,
         longWordThreshold: longWordThresholdControl.value,
         wordPause: wordPauseControl.value,
+        symbolPause: symbolPauseControl.value,
         voice: voiceSelect.value,
         nightMode: themeToggle.checked,
         textSize: textSizeControl.value,
         dictationSize: dictationSizeControl.value,
-        speakPunctuation: speakPunctToggle ? speakPunctToggle.checked : true
+        speakPunctuation: speakPunctToggle ? speakPunctToggle.checked : true,
+        speakSymbols: speakSymbolsToggle ? speakSymbolsToggle.checked : true
       };
       setCookie("dictatorSettings", JSON.stringify(settings), 365);
       setCookie("dictisSettings", "", -1);
@@ -225,11 +230,13 @@
         if (settings.volume) { volumeControl.value = settings.volume; volumeValue.textContent = settings.volume; }
         if (settings.longWordThreshold) { longWordThresholdControl.value = settings.longWordThreshold; longWordThresholdValue.textContent = settings.longWordThreshold; }
         if (settings.wordPause) { wordPauseControl.value = settings.wordPause; wordPauseValue.textContent = settings.wordPause; }
+        if (settings.symbolPause) { symbolPauseControl.value = settings.symbolPause; symbolPauseValue.textContent = settings.symbolPause; }
         if (settings.voice) { voiceSelect.value = settings.voice; }
         if (typeof settings.nightMode === 'boolean') { themeToggle.checked = settings.nightMode; document.body.classList.toggle('night-mode', settings.nightMode); }
         if (settings.textSize) { textSizeControl.value = settings.textSize; textSizeValue.textContent = settings.textSize + "px"; textInput.style.fontSize = settings.textSize + "px"; }
         if (settings.dictationSize) { dictationSizeControl.value = settings.dictationSize; dictationSizeValue.textContent = settings.dictationSize + "px"; sentenceContent.style.fontSize = settings.dictationSize + "px"; }
         if (typeof settings.speakPunctuation === "boolean" && speakPunctToggle) { speakPunctToggle.checked = settings.speakPunctuation; }
+        if (typeof settings.speakSymbols === "boolean" && speakSymbolsToggle) { speakSymbolsToggle.checked = settings.speakSymbols; }
       } catch (err) {
         console.error("Ошибка при парсинге куки настроек:", err);
       }
@@ -245,11 +252,13 @@
       volumeControl.value = "1.0";          volumeValue.textContent = "1.0";
       longWordThresholdControl.value = "7"; longWordThresholdValue.textContent = "7";
       wordPauseControl.value = "200";       wordPauseValue.textContent = "200";
+      symbolPauseControl.value = "200";    symbolPauseValue.textContent = "200";
       voiceSelect.value = "zahar";
       textSizeControl.value = "16"; textSizeValue.textContent = "16px"; textInput.style.fontSize = "16px";
       dictationSizeControl.value = "48"; dictationSizeValue.textContent = "48px"; sentenceContent.style.fontSize = "48px";
       themeToggle.checked = true; document.body.classList.add('night-mode');
       if (speakPunctToggle) speakPunctToggle.checked = true;
+      if (speakSymbolsToggle) speakSymbolsToggle.checked = true;
       saveSettingsToCookies();
     }
 
@@ -263,9 +272,11 @@
     volumeControl.addEventListener('input', () => { volumeValue.textContent = volumeControl.value; saveSettingsToCookies(); });
     longWordThresholdControl.addEventListener('input', () => { longWordThresholdValue.textContent = longWordThresholdControl.value; saveSettingsToCookies(); clearActivePreset(); });
     wordPauseControl.addEventListener('input', () => { wordPauseValue.textContent = wordPauseControl.value; saveSettingsToCookies(); clearActivePreset(); });
+    symbolPauseControl.addEventListener('input', () => { symbolPauseValue.textContent = symbolPauseControl.value; saveSettingsToCookies(); clearActivePreset(); });
     voiceSelect.addEventListener('change', () => { saveSettingsToCookies(); });
     themeToggle.addEventListener('change', () => { document.body.classList.toggle('night-mode', themeToggle.checked); saveSettingsToCookies(); });
     if (speakPunctToggle) speakPunctToggle.addEventListener('change', () => { saveSettingsToCookies(); });
+    if (speakSymbolsToggle) speakSymbolsToggle.addEventListener('change', () => { saveSettingsToCookies(); });
 
     textSizeControl.addEventListener('input', () => { textSizeValue.textContent = textSizeControl.value + "px"; textInput.style.fontSize = textSizeControl.value + "px"; saveSettingsToCookies(); });
     dictationSizeControl.addEventListener('input', () => { dictationSizeValue.textContent = dictationSizeControl.value + "px"; sentenceContent.style.fontSize = dictationSizeControl.value + "px"; saveSettingsToCookies(); });
@@ -331,6 +342,10 @@
     }
     function isPunctuation(token) {
       return /^[^\wа-яА-ЯёЁ]+$/.test(token);
+    }
+    const standardPunctuation = new Set(['.', ',', '!', '?', '…', '(', ')', '"', "'", '«', '»', '[', ']', '{', '}', ':', ';', '-']);
+    function isSpecialSymbol(token) {
+      return isPunctuation(token) && token.length === 1 && !standardPunctuation.has(token);
     }
 
     function isFirstSentence(i) { return i === 0; }
@@ -417,6 +432,8 @@
 
           const token = words[wordIndex];
           const isPunctTok = isPunctuation(token);
+          const isSymbolTok = isSpecialSymbol(token);
+          const isRegPunctTok = isPunctTok && !isSymbolTok;
           const isCapitalized = /^[А-ЯЁ]/.test(token);
           const longWordTh = parseInt(longWordThresholdControl.value, 10);
           const isLongWord = !isPunctTok && token.length >= longWordTh;
@@ -454,7 +471,10 @@
           }
           function stepReadToken(cb) {
             highlightWord(wordIndex);
-            if (isPunctTok) {
+            if (isSymbolTok) {
+              if (speakSymbolsToggle && !speakSymbolsToggle.checked) { unhighlightWord(wordIndex); cb(); }
+              else { speakPunctuation(token, wordIndex, () => { cb(); }); }
+            } else if (isRegPunctTok) {
               if (speakPunctToggle && !speakPunctToggle.checked) { unhighlightWord(wordIndex); cb(); }
               else { speakPunctuation(token, wordIndex, () => { cb(); }); }
             } else if (isLongWord) {
@@ -494,9 +514,15 @@
               stepReadToken(() => {
                 if (speechStopped) { resolve(); return; }
                 const nextI = wordIndex + 1;
+                const symbolSpoken = isSymbolTok && (!speakSymbolsToggle || speakSymbolsToggle.checked);
                 if (nextI < words.length) {
                   const nextTok = words[nextI];
-                  if (isPunctTok && isPunctuation(nextTok)) {
+                  if (symbolSpoken) {
+                    const pause = parseInt(symbolPauseControl.value, 10) || 0;
+                    schedulePauseable(() => { wordIndex++; speakNext(); }, pause);
+                  } else if (isSymbolTok && !symbolSpoken) {
+                    wordIndex++; speakNext();
+                  } else if (isRegPunctTok && isPunctuation(nextTok)) {
                     schedulePauseable(() => { wordIndex++; speakNext(); }, 200);
                   } else if (!isPunctuation(nextTok)) {
                     const pause = parseInt(wordPauseControl.value, 10) || 0;
