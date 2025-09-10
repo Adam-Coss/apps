@@ -72,6 +72,10 @@
             <input type="range" id="word-pause-control" min="0" max="3000" step="100" value="200">
           </div>
           <div class="control-group">
+            <label>Пауза после спецсимволов (мс): <span id="symbol-pause-value">200</span></label>
+            <input type="range" id="symbol-pause-control" min="0" max="3000" step="100" value="200">
+          </div>
+          <div class="control-group">
             <label>Размер шрифта (текст): <span id="text-size-value">16px</span></label>
             <input type="range" id="text-size-control" min="10" max="36" step="1" value="16">
           </div>
@@ -109,7 +113,15 @@
           </label>
           <label for="speak-punct-toggle">Проговаривать знаки препинания</label>
         </div>
-        
+
+        <div class="theme-switch" style="margin-top:10px">
+          <label class="switch">
+            <input type="checkbox" id="speak-symbols-toggle" checked>
+            <span class="slider"></span>
+          </label>
+          <label for="speak-symbols-toggle">Проговаривать спецсимволы</label>
+        </div>
+
         <div style="margin-top:10px">
           <button id="help-button" type="button">Справка</button>
         </div>
@@ -130,6 +142,7 @@
             <li><strong>Автосохранение текста</strong>: весь текст автоматически сохраняется в <code>localStorage</code>. При закрытии или перезагрузке вкладки он будет восстановлен.</li>
             <li><strong>Настройки</strong> (скорости, паузы, громкость, тема, пресеты, размеры шрифтов) сохраняются в cookie на 365 дней.</li>
             <li><strong>Знаки препинания</strong>: переключатель «Проговаривать знаки препинания» включает/выключает произношение «Точка», «Запятая» и т.д.</li>
+            <li><strong>Спецсимволы</strong>: переключатель «Проговаривать спецсимволы» управляет произношением «Решётка», «Собака» и т.п., а ползунок «Пауза после спецсимволов» задаёт задержку после них.</li>
             <li><strong>Подсказки</strong>: при новой строке/абзаце и при «двойных» буквах озвучиваются вспомогательные фразы.</li>
             <li><strong>Совместимость</strong>: работает на десктопе и мобильных устройствах. Учтите системную громкость и беззвучный режим.</li>
             <li><strong>Конфиденциальность</strong>: текст хранится только локально в вашем браузере; для озвучки используется запрос к TTS‑сервису.</li>
