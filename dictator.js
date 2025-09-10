@@ -540,7 +540,7 @@
       let i = 0; (function next(){ if (i >= expressions.length) { cb(); return; } const text = expressions[i]; yandexTtsPlay(text, parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { i++; next(); }); })();
     }
     function speakPunctuation(punct, index, cb) {
-      const map = { '.': 'Точка', ',': 'Запятая', '!': 'Восклицательный знак', '?': 'Вопросительный знак', '…': 'Многоточие', '(': 'Открывающая скобка', ')': 'Закрывающая скобка', '"': 'Кавычка', "'": 'Кавычка', '«': 'Открывающая кавычка', '»': 'Закрывающая кавычка', '[': 'Открывающая квадратная скобка', ']': 'Закрывающая квадратная', '{': 'Открывающая фигурная', '}': 'Закрывающая фигурная' };
+      const map = typeof PUNCTUATION_MAP !== 'undefined' ? PUNCTUATION_MAP : {};
       const txt = map[punct] || punct;
       yandexTtsPlay(txt, parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { unhighlightWord(index); cb(); });
     }
