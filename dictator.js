@@ -327,10 +327,10 @@
       return text.split(re).filter(s => s.trim().length > 0);
     }
     function splitIntoWords(sentence) {
-      return sentence.match(/[\wа-яА-ЯёЁ\-]+|[.,!?…()"'«»\[\]{}]+/g) || [sentence];
+      return sentence.match(/[\wа-яА-ЯёЁ]+|[^\s\w]/g) || [sentence];
     }
     function isPunctuation(token) {
-      return /^[.,!?…()"'«»\[\]{}]+$/.test(token);
+      return /^[^\wа-яА-ЯёЁ]+$/.test(token);
     }
 
     function isFirstSentence(i) { return i === 0; }
