@@ -191,15 +191,17 @@
     .preset-btn {
       -webkit-tap-highlight-color: transparent;
       appearance: none;
+      padding: 10px 14px;
+      border-radius: 12px;
       border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 10px 16px;
-      font-size: 14px;
-      font-weight: 600;
-      background: var(--surface);
+      background: transparent;
+      color: inherit;
       cursor: pointer;
+      font-weight: 600;
       transition: transform .02s ease, background .2s ease, opacity .2s ease;
     }
+    .preset-btn:hover { background: rgba(0,0,0,.04); }
+    body.night-mode .preset-btn:hover { background: rgba(255,255,255,.06); }
     .preset-btn:active { transform: translateY(1px); }
     .preset-btn[aria-pressed="true"] {
       background: var(--primary);

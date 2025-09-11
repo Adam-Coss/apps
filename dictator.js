@@ -19,14 +19,10 @@
     const slowWordSpeedValue = document.getElementById('slow-word-speed-value');
     const auxSpeedControl = document.getElementById('aux-speed-control');
     const auxSpeedValue = document.getElementById('aux-speed-value');
-    const volumeControl = document.getElementById('volume-control');
-    const volumeValue = document.getElementById('volume-value');
     const longWordThresholdControl = document.getElementById('long-word-threshold');
     const longWordThresholdValue = document.getElementById('long-word-threshold-value');
     const wordPauseControl = document.getElementById('word-pause-control');
     const wordPauseValue = document.getElementById('word-pause-value');
-    const symbolPauseControl = document.getElementById('symbol-pause-control');
-    const symbolPauseValue = document.getElementById('symbol-pause-value');
     const speakSymbolsToggle = document.getElementById('speak-symbols-toggle');
 
     
@@ -203,10 +199,8 @@
         wordSpeed: wordSpeedControl.value,
         slowWordSpeed: slowWordSpeedControl.value,
         auxSpeed: auxSpeedControl.value,
-        volume: volumeControl.value,
         longWordThreshold: longWordThresholdControl.value,
         wordPause: wordPauseControl.value,
-        symbolPause: symbolPauseControl.value,
         voice: voiceSelect.value,
         nightMode: themeToggle.checked,
         textSize: textSizeControl.value,
@@ -227,10 +221,8 @@
         if (settings.wordSpeed) { wordSpeedControl.value = settings.wordSpeed; wordSpeedValue.textContent = settings.wordSpeed + "x"; }
         if (settings.slowWordSpeed) { slowWordSpeedControl.value = settings.slowWordSpeed; slowWordSpeedValue.textContent = settings.slowWordSpeed + "x"; }
         if (settings.auxSpeed) { auxSpeedControl.value = settings.auxSpeed; auxSpeedValue.textContent = settings.auxSpeed + "x"; }
-        if (settings.volume) { volumeControl.value = settings.volume; volumeValue.textContent = settings.volume; }
         if (settings.longWordThreshold) { longWordThresholdControl.value = settings.longWordThreshold; longWordThresholdValue.textContent = settings.longWordThreshold; }
         if (settings.wordPause) { wordPauseControl.value = settings.wordPause; wordPauseValue.textContent = settings.wordPause; }
-        if (settings.symbolPause) { symbolPauseControl.value = settings.symbolPause; symbolPauseValue.textContent = settings.symbolPause; }
         if (settings.voice) { voiceSelect.value = settings.voice; }
         if (typeof settings.nightMode === 'boolean') { themeToggle.checked = settings.nightMode; document.body.classList.toggle('night-mode', settings.nightMode); }
         if (settings.textSize) { textSizeControl.value = settings.textSize; textSizeValue.textContent = settings.textSize + "px"; textInput.style.fontSize = settings.textSize + "px"; }
@@ -249,10 +241,8 @@
       wordSpeedControl.value = "1.0";       wordSpeedValue.textContent = "1.0x";
       slowWordSpeedControl.value = "0.5";   slowWordSpeedValue.textContent = "0.5x";
       auxSpeedControl.value = "1.0";        auxSpeedValue.textContent = "1.0x";
-      volumeControl.value = "1.0";          volumeValue.textContent = "1.0";
       longWordThresholdControl.value = "7"; longWordThresholdValue.textContent = "7";
       wordPauseControl.value = "200";       wordPauseValue.textContent = "200";
-      symbolPauseControl.value = "200";    symbolPauseValue.textContent = "200";
       voiceSelect.value = "zahar";
       textSizeControl.value = "16"; textSizeValue.textContent = "16px"; textInput.style.fontSize = "16px";
       dictationSizeControl.value = "48"; dictationSizeValue.textContent = "48px"; sentenceContent.style.fontSize = "48px";
@@ -269,10 +259,8 @@
     wordSpeedControl.addEventListener('input', () => { wordSpeedValue.textContent = wordSpeedControl.value + 'x'; saveSettingsToCookies(); clearActivePreset(); });
     slowWordSpeedControl.addEventListener('input', () => { slowWordSpeedValue.textContent = slowWordSpeedControl.value + 'x'; saveSettingsToCookies(); clearActivePreset(); });
     auxSpeedControl.addEventListener('input', () => { auxSpeedValue.textContent = auxSpeedControl.value + 'x'; saveSettingsToCookies(); clearActivePreset(); });
-    volumeControl.addEventListener('input', () => { volumeValue.textContent = volumeControl.value; saveSettingsToCookies(); });
     longWordThresholdControl.addEventListener('input', () => { longWordThresholdValue.textContent = longWordThresholdControl.value; saveSettingsToCookies(); clearActivePreset(); });
     wordPauseControl.addEventListener('input', () => { wordPauseValue.textContent = wordPauseControl.value; saveSettingsToCookies(); clearActivePreset(); });
-    symbolPauseControl.addEventListener('input', () => { symbolPauseValue.textContent = symbolPauseControl.value; saveSettingsToCookies(); clearActivePreset(); });
     voiceSelect.addEventListener('change', () => { saveSettingsToCookies(); });
     themeToggle.addEventListener('change', () => { document.body.classList.toggle('night-mode', themeToggle.checked); saveSettingsToCookies(); });
     if (speakPunctToggle) speakPunctToggle.addEventListener('change', () => { saveSettingsToCookies(); });
@@ -400,7 +388,6 @@
       yandexTtsPlay(
         sentence,
         parseFloat(sentenceSpeedControl.value),
-        parseFloat(volumeControl.value),
         voice,
         () => {
           if (!speechStopped) {
@@ -452,7 +439,6 @@
               yandexTtsPlay(
                 prependText,
                 parseFloat(auxSpeedControl.value),
-                parseFloat(volumeControl.value),
                 voiceSelect.value,
                 () => { cb(); }
               );
@@ -463,7 +449,6 @@
               yandexTtsPlay(
                 'С большой буквы',
                 parseFloat(auxSpeedControl.value),
-                parseFloat(volumeControl.value),
                 voiceSelect.value,
                 () => { cb(); }
               );
@@ -481,7 +466,6 @@
               yandexTtsPlay(
                 token,
                 parseFloat(wordSpeedControl.value),
-                parseFloat(volumeControl.value),
                 voiceSelect.value,
                 () => {
                   const aux = getAuxExpressions(token);
@@ -489,7 +473,6 @@
                     yandexTtsPlay(
                       token,
                       parseFloat(slowWordSpeedControl.value),
-                      parseFloat(volumeControl.value),
                       voiceSelect.value,
                       () => { unhighlightWord(wordIndex); cb(); }
                     );
@@ -500,7 +483,6 @@
               yandexTtsPlay(
                 token,
                 parseFloat(wordSpeedControl.value),
-                parseFloat(volumeControl.value),
                 voiceSelect.value,
                 () => { unhighlightWord(wordIndex); const aux = getAuxExpressions(token); speakAuxExpressions(aux, () => { cb(); }); }
               );
@@ -518,8 +500,7 @@
                 if (nextI < words.length) {
                   const nextTok = words[nextI];
                   if (symbolSpoken) {
-                    const pause = parseInt(symbolPauseControl.value, 10) || 0;
-                    schedulePauseable(() => { wordIndex++; speakNext(); }, pause);
+                    schedulePauseable(() => { wordIndex++; speakNext(); }, 200);
                   } else if (isSymbolTok && !symbolSpoken) {
                     wordIndex++; speakNext();
                   } else if (isRegPunctTok && isPunctuation(nextTok)) {
@@ -538,7 +519,7 @@
     }
 
     // TTS-прокси
-    function yandexTtsPlay(text, speed, volume, voice, callback) {
+    function yandexTtsPlay(text, speed, voice, callback) {
       if (!text || !text.trim()) { callback(); return; }
       if (speed < 0.1) speed = 0.1; if (speed > 3.0) speed = 3.0;
       fetch(GLITCH_TTS_URL, {
@@ -550,7 +531,6 @@
       .then(blob => {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
-        audio.volume = volume;
         audio.onended = () => { if (activeAudio === audio) activeAudio = null; callback(); };
         audio.onerror = () => { if (activeAudio === audio) activeAudio = null; callback(); };
         activeAudio = audio;
@@ -563,12 +543,12 @@
 
     function speakAuxExpressions(expressions, cb) {
       if (!expressions || expressions.length === 0) { cb(); return; }
-      let i = 0; (function next(){ if (i >= expressions.length) { cb(); return; } const text = expressions[i]; yandexTtsPlay(text, parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { i++; next(); }); })();
+      let i = 0; (function next(){ if (i >= expressions.length) { cb(); return; } const text = expressions[i]; yandexTtsPlay(text, parseFloat(auxSpeedControl.value), voiceSelect.value, () => { i++; next(); }); })();
     }
     function speakPunctuation(punct, index, cb) {
       const map = typeof PUNCTUATION_MAP !== 'undefined' ? PUNCTUATION_MAP : {};
       const txt = map[punct] || punct;
-      yandexTtsPlay(txt, parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { unhighlightWord(index); cb(); });
+      yandexTtsPlay(txt, parseFloat(auxSpeedControl.value), voiceSelect.value, () => { unhighlightWord(index); cb(); });
     }
 
     function highlightWord(i) { const sp = document.getElementById(`word-${i}`); if (sp) sp.classList.add('highlight'); }
@@ -602,7 +582,7 @@
     function resetProgressBar() { progressBar.style.width = '0%'; }
 
     function playNotificationSound() { const audio = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'); audio.play().catch(e => console.error('bell error', e)); }
-    function speakFinalExpression() { yandexTtsPlay('Конспект окончен', parseFloat(auxSpeedControl.value), parseFloat(volumeControl.value), voiceSelect.value, () => { restoreOriginalText(); }); }
+    function speakFinalExpression() { yandexTtsPlay('Конспект окончен', parseFloat(auxSpeedControl.value), voiceSelect.value, () => { restoreOriginalText(); }); }
 
     // При загрузке — восстановить настройки и текст
     loadSettingsFromCookies();
