@@ -62,6 +62,8 @@
     const progressBar = document.getElementById('progress-bar');
     const themeToggle = document.getElementById('theme-toggle');
     const indicator = document.getElementById('indicator');
+    const advancedToggle = document.getElementById('advanced-toggle');
+    const advancedSection = document.getElementById('advanced-section');
     // === Автосохранение текста в localStorage ===
     const LOCAL_TEXT_KEY = 'dictatorText';
     function saveTextToStorage(val) {
@@ -128,6 +130,7 @@
     function pauseAll(){
       if (isPaused) return; isPaused = true;
       pauseResumeButton.textContent = 'Продолжить';
+      pauseTimer();
       if (activeAudio) { try { activeAudio.pause(); } catch(e){} }
       const now = performance.now();
       for (const t of pendingTimeouts) {
@@ -137,6 +140,7 @@
     function resumeAll(){
       if (!isPaused) return; isPaused = false;
       pauseResumeButton.textContent = 'Пауза';
+      resumeTimer();
       if (activeAudio && activeAudio.paused) { activeAudio.play().catch(()=>{}); }
       const now = performance.now();
       for (const t of pendingTimeouts.slice()) {
@@ -153,7 +157,8 @@
     }
 
     const helpButton = document.getElementById('help-button');
-    const helpSection = document.getElementById('help-section');
+    const helpModal = document.getElementById('help-modal');
+    const helpClose = document.getElementById('help-close');
 
     let isSpeaking = false;
     let speechStopped = false;
@@ -284,7 +289,13 @@
       if (isPaused) resumeAll(); else pauseAll();
     });
 
-    helpButton.addEventListener('click', () => { const hidden = getComputedStyle(helpSection).display === 'none'; helpSection.style.display = hidden ? 'block' : 'none'; });
+    helpButton.addEventListener('click', () => { helpModal.style.display = 'flex'; });
+    helpClose.addEventListener('click', () => { helpModal.style.display = 'none'; });
+    helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.style.display = 'none'; });
+    advancedToggle.addEventListener('click', () => {
+      const hidden = getComputedStyle(advancedSection).display === 'none';
+      advancedSection.style.display = hidden ? 'block' : 'none';
+    });
 
     /*************************************************************
      *   СТАРТ/СТОП
@@ -576,8 +587,26 @@
       indicator.textContent = '';
       indicator.classList.remove('visible');
     }
-    function startTimer() { timer = 0; timerDisplay.textContent = `Время на странице: ${timer} секунд`; timerInterval = setInterval(() => { timer++; timerDisplay.textContent = `Время на странице: ${timer} секунд`; }, 1000); }
-    function stopTimer() { clearInterval(timerInterval); }
+    function startTimer() {
+      timer = 0;
+      timerDisplay.textContent = `Время: ${timer} c`;
+      timerInterval = setInterval(() => {
+        timer++;
+        timerDisplay.textContent = `Время: ${timer} c`;
+      }, 1000);
+    }
+    function pauseTimer() {
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    }
+    function resumeTimer() {
+      if (!timerInterval) {
+        timerInterval = setInterval(() => {
+          timer++;
+          timerDisplay.textContent = `Время: ${timer} c`;
+        }, 1000);
+      }
+    }
+    function stopTimer() { pauseTimer(); timer = 0; timerDisplay.textContent = `Время: ${timer} c`; }
     function updateProgressBar() { const p = ((currentSentenceIndex + 1) / totalSentences) * 100; progressBar.style.width = p + '%'; }
     function resetProgressBar() { progressBar.style.width = '0%'; }
 
