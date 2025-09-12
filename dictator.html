@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="dictator.css">
 </head>
 <body class="night-mode">
+  <div id="timer" class="timer">Время: 0 c</div>
   <div class="app">
     <!-- Компактный верх: только поле + кнопка Старт -->
     <div class="card">
@@ -19,8 +20,14 @@
       <div id="progress-container"><div id="progress-bar"></div></div>
       <div id="indicator"></div>
       <div class="actions">
-        <button id="start-stop-button">Старт</button>
-        <button id="pause-resume-button" disabled>Пауза</button>
+        <div class="main-actions">
+          <button id="start-stop-button">Старт</button>
+          <button id="pause-resume-button" disabled>Пауза</button>
+        </div>
+        <div class="side-actions">
+          <button id="paste-button" class="secondary-button">Вставить</button>
+          <button id="clear-button" class="secondary-button">Очистить</button>
+        </div>
       </div>
     </div>
 
@@ -31,127 +38,139 @@
         <svg class="caret" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </summary>
       <div class="settings-body">
-        <div id="timer">Время на странице: 0 секунд</div>
-
-        <!-- Голос -->
-        <div style="margin-top:8px">
-          <label for="voice-select">Голос:</label>
-          <select id="voice-select" style="margin-left:8px">
-            <option value="zahar" selected>Мужской</option>
-            <option value="jane">Женский</option>
-          </select>
-        </div>
-
-        <div class="controls">
-          <div class="control-group">
-            <label>Скорость предложений: <span id="sentence-speed-value">1.0x</span></label>
-            <input type="range" id="sentence-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
-          </div>
-          <div class="control-group">
-            <label>Скорость слов: <span id="word-speed-value">1.0x</span></label>
-            <input type="range" id="word-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
-          </div>
-          <div class="control-group">
-            <label>Скорость повторного чтения длинных слов: <span id="slow-word-speed-value">0.5x</span></label>
-            <input type="range" id="slow-word-speed-control" min="0.1" max="3.0" step="0.1" value="0.5">
-          </div>
-          <div class="control-group">
-            <label>Скорость вспомогательных выражений: <span id="aux-speed-value">1.0x</span></label>
-            <input type="range" id="aux-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
-          </div>
-          <div class="control-group">
-            <label>Порог длинного слова (букв): <span id="long-word-threshold-value">7</span></label>
-            <input type="range" id="long-word-threshold" min="4" max="15" step="1" value="7">
-          </div>
-          <div class="control-group">
-            <label>Пауза между словами (мс): <span id="word-pause-value">200</span></label>
-            <input type="range" id="word-pause-control" min="0" max="3000" step="100" value="200">
-          </div>
-          <div class="control-group">
-            <label>Размер шрифта (текст): <span id="text-size-value">16px</span></label>
-            <input type="range" id="text-size-control" min="10" max="36" step="1" value="16">
-          </div>
-          <div class="control-group">
-            <label>Размер шрифта (диктовка): <span id="dictation-size-value">48px</span></label>
-            <input type="range" id="dictation-size-control" min="12" max="72" step="1" value="48">
-          </div>
-        </div>
-
-        <div class="additional-buttons">
-          <button id="paste-button">Вставить</button>
-          <button id="clear-button">Очистить</button>
-          <button id="reset-settings-button">Сброс настроек</button>
-        </div>
-
         <div class="presets" id="presets">
-          <button class="preset-btn" data-preset="slow"  type="button">Медленный</button>
+          <button class="preset-btn" data-preset="slow" type="button">Медленный</button>
           <button class="preset-btn" data-preset="normal" type="button">Обычный</button>
-          <button class="preset-btn" data-preset="fast"  type="button">Быстрый</button>
-        </div>
-    
-
-        <div class="theme-switch">
-          <label class="switch">
-            <input type="checkbox" id="theme-toggle" checked>
-            <span class="slider"></span>
-          </label>
-          <label for="theme-toggle">Ночная тема</label>
+          <button class="preset-btn" data-preset="fast" type="button">Быстрый</button>
         </div>
 
-        <div class="theme-switch" style="margin-top:10px">
-          <label class="switch">
-            <input type="checkbox" id="speak-punct-toggle" checked>
-            <span class="slider"></span>
-          </label>
-          <label for="speak-punct-toggle">Проговаривать знаки препинания</label>
+        <button id="advanced-toggle" type="button">Расширенные</button>
+
+        <div id="advanced-section">
+          <div class="settings-group">
+            <h4>Голос</h4>
+            <div class="control-group">
+              <label for="voice-select">Голос:</label>
+              <select id="voice-select">
+                <option value="zahar" selected>Мужской</option>
+                <option value="jane">Женский</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h4>Скорости</h4>
+            <div class="control-group">
+              <label>Предложения: <span id="sentence-speed-value">1.0x</span></label>
+              <input type="range" id="sentence-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+              <label>Слова: <span id="word-speed-value">1.0x</span></label>
+              <input type="range" id="word-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+              <label>Длинные слова: <span id="slow-word-speed-value">0.5x</span></label>
+              <input type="range" id="slow-word-speed-control" min="0.1" max="3.0" step="0.1" value="0.5">
+            </div>
+            <div class="control-group">
+              <label>Вспомогат.: <span id="aux-speed-value">1.0x</span></label>
+              <input type="range" id="aux-speed-control" min="0.1" max="3.0" step="0.1" value="1.0">
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h4>Паузы</h4>
+            <div class="control-group">
+              <label>Порог длины: <span id="long-word-threshold-value">7</span></label>
+              <input type="range" id="long-word-threshold" min="4" max="15" step="1" value="7">
+            </div>
+            <div class="control-group">
+              <label>Пауза (мс): <span id="word-pause-value">200</span></label>
+              <input type="range" id="word-pause-control" min="0" max="3000" step="100" value="200">
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h4>Шрифт</h4>
+            <div class="control-group">
+              <label>Текст: <span id="text-size-value">16px</span></label>
+              <input type="range" id="text-size-control" min="10" max="36" step="1" value="16">
+            </div>
+            <div class="control-group">
+              <label>Диктовка: <span id="dictation-size-value">48px</span></label>
+              <input type="range" id="dictation-size-control" min="12" max="72" step="1" value="48">
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h4>Прочее</h4>
+            <div class="theme-switch">
+              <label class="switch">
+                <input type="checkbox" id="theme-toggle" checked>
+                <span class="slider"></span>
+              </label>
+              <label for="theme-toggle">Ночная тема</label>
+            </div>
+
+            <div class="theme-switch" style="margin-top:10px">
+              <label class="switch">
+                <input type="checkbox" id="speak-punct-toggle" checked>
+                <span class="slider"></span>
+              </label>
+              <label for="speak-punct-toggle">Знаки препинания</label>
+            </div>
+
+            <div class="theme-switch" style="margin-top:10px">
+              <label class="switch">
+                <input type="checkbox" id="speak-symbols-toggle" checked>
+                <span class="slider"></span>
+              </label>
+              <label for="speak-symbols-toggle">Спецсимволы</label>
+            </div>
+
+            <button id="reset-settings-button">Сброс</button>
+            <button id="help-button" type="button">Справка</button>
+          </div>
         </div>
-
-        <div class="theme-switch" style="margin-top:10px">
-          <label class="switch">
-            <input type="checkbox" id="speak-symbols-toggle" checked>
-            <span class="slider"></span>
-          </label>
-          <label for="speak-symbols-toggle">Проговаривать спецсимволы</label>
-        </div>
-
-        <div style="margin-top:10px">
-          <button id="help-button" type="button">Справка</button>
-        </div>
-        <div id="help-section">
-          <h2>Справка</h2>
-          <p><strong>Dictator</strong> — тренажёр диктанта: приложение озвучивает введённый текст голосами Яндекс (<code>zahar</code> и <code>jane</code>), разбирая его на предложения и слова.</p>
-
-          <h3>Как пользоваться</h3>
-          <ol>
-            <li>Вставьте или введите текст в поле.</li>
-            <li>Нажмите «Старт» (или клавишу <kbd>Space</kbd>) — начнётся диктовка.</li>
-            <li>Кнопкой «Пауза/Продолжить» можно временно остановить и возобновить озвучивание.</li>
-            <li>«Стоп» завершает диктовку и возвращает текст в поле.</li>
-          </ol>
-
-          <h3>Что важно знать</h3>
-          <ul>
-            <li><strong>Автосохранение текста</strong>: весь текст автоматически сохраняется в <code>localStorage</code>. При закрытии или перезагрузке вкладки он будет восстановлен.</li>
-            <li><strong>Настройки</strong> (скорости, паузы, тема, пресеты, размеры шрифтов) сохраняются в cookie на 365 дней.</li>
-            <li><strong>Знаки препинания</strong>: переключатель «Проговаривать знаки препинания» включает/выключает произношение «Точка», «Запятая» и т.д.</li>
-            <li><strong>Спецсимволы</strong>: переключатель «Проговаривать спецсимволы» управляет произношением «Решётка», «Собака» и т.п.</li>
-            <li><strong>Подсказки</strong>: при новой строке/абзаце и при «двойных» буквах озвучиваются вспомогательные фразы.</li>
-            <li><strong>Совместимость</strong>: работает на десктопе и мобильных устройствах. Учтите системную громкость и беззвучный режим.</li>
-            <li><strong>Конфиденциальность</strong>: текст хранится только локально в вашем браузере; для озвучки используется запрос к TTS‑сервису.</li>
-          </ul>
-
-          <h3>Быстрые настройки</h3>
-          <ul>
-            <li>Пресеты «Медленный», «Обычный», «Быстрый» — мгновенно подбирают скорости и паузы.</li>
-            <li>«Размер шрифта (текст)» и «Размер шрифта (диктовка)» — под разные экраны.</li>
-            <li>«Ночная тема» — переключение цветовой схемы.</li>
-          </ul>
-</div>
       </div>
     </details>
   </div>
 
-    <script src="punctuation-map.js"></script>
-    <script src="dictator.js"></script>
+  <div id="help-modal" class="modal">
+    <div class="modal-content">
+      <button id="help-close" class="modal-close">×</button>
+      <h2>Справка</h2>
+      <p><strong>Dictator</strong> — тренажёр диктанта: приложение озвучивает введённый текст голосами Яндекс (<code>zahar</code> и <code>jane</code>), разбирая его на предложения и слова.</p>
+
+      <h3>Как пользоваться</h3>
+      <ol>
+        <li>Вставьте или введите текст в поле.</li>
+        <li>Нажмите «Старт» (или клавишу <kbd>Space</kbd>) — начнётся диктовка.</li>
+        <li>Кнопкой «Пауза/Продолжить» можно временно остановить и возобновить озвучивание.</li>
+        <li>«Стоп» завершает диктовку и возвращает текст в поле.</li>
+      </ol>
+
+      <h3>Что важно знать</h3>
+      <ul>
+        <li><strong>Автосохранение текста</strong>: весь текст автоматически сохраняется в <code>localStorage</code>. При закрытии или перезагрузке вкладки он будет восстановлен.</li>
+        <li><strong>Настройки</strong> (скорости, паузы, тема, пресеты, размеры шрифтов) сохраняются в cookie на 365 дней.</li>
+        <li><strong>Знаки препинания</strong>: переключатель «Знаки препинания» включает/выключает произношение «Точка», «Запятая» и т.д.</li>
+        <li><strong>Спецсимволы</strong>: переключатель «Спецсимволы» управляет произношением «Решётка», «Собака» и т.п.</li>
+        <li><strong>Подсказки</strong>: при новой строке/абзаце и при «двойных» буквах озвучиваются вспомогательные фразы.</li>
+        <li><strong>Совместимость</strong>: работает на десктопе и мобильных устройствах. Учтите системную громкость и беззвучный режим.</li>
+        <li><strong>Конфиденциальность</strong>: текст хранится только локально в вашем браузере; для озвучки используется запрос к TTS‑сервису.</li>
+      </ul>
+
+      <h3>Быстрые настройки</h3>
+      <ul>
+        <li>Пресеты «Медленный», «Обычный», «Быстрый» — мгновенно подбирают скорости и паузы.</li>
+        <li>«Текст» и «Диктовка» — размеры шрифтов под разные экраны.</li>
+        <li>«Ночная тема» — переключение цветовой схемы.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="punctuation-map.js"></script>
+  <script src="dictator.js"></script>
 </body>
 </html>
