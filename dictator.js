@@ -337,12 +337,12 @@
       return text.split(re).filter(s => s.trim().length > 0);
     }
     function splitIntoWords(sentence) {
-      return sentence.match(/[\wа-яА-ЯёЁ]+|[^\s\w]/g) || [sentence];
+      return sentence.match(/[\wа-яА-ЯёЁ]+(?:[-‑][\wа-яА-ЯёЁ]+)*|[^\s\w]/g) || [sentence];
     }
     function isPunctuation(token) {
       return /^[^\wа-яА-ЯёЁ]+$/.test(token);
     }
-    const standardPunctuation = new Set(['.', ',', '!', '?', '…', '(', ')', '"', "'", '«', '»', '[', ']', '{', '}', ':', ';', '-']);
+    const standardPunctuation = new Set(['.', ',', '!', '?', '…', '(', ')', '"', "'", '«', '»', '[', ']', '{', '}', ':', ';', '-', '‑']);
     function isSpecialSymbol(token) {
       return isPunctuation(token) && token.length === 1 && !standardPunctuation.has(token);
     }
@@ -374,7 +374,7 @@
       const exps = [];
       const dbl = getDoubleLetterName(word);
       if (dbl) exps.push(dbl);
-      if (word.includes('-')) exps.push('Через дефис');
+      if (/[-‑]/.test(word)) exps.push('Через дефис');
       return exps;
     }
     function getDoubleLetterName(word) {
@@ -384,6 +384,12 @@
         if (a === b && letterSounds[a]) { return 'Через две ' + letterSounds[a]; }
       }
       return null;
+    }
+
+    function getSpokenWord(word) {
+      if (word.length === 1 && word.toLowerCase() === 'к') return 'кэ';
+      if (/[-‑]/.test(word)) return word.replace(/[-‑]/g, '');
+      return word;
     }
 
     /*************************************************************
@@ -434,7 +440,7 @@
           const isRegPunctTok = isPunctTok && !isSymbolTok;
           const isCapitalized = /^[А-ЯЁ]/.test(token);
           const longWordTh = parseInt(longWordThresholdControl.value, 10);
-          const isLongWord = !isPunctTok && token.length >= longWordTh;
+          const isLongWord = !isPunctTok && getSpokenWord(token).length >= longWordTh;
 
           let prependText = '';
           if (wordIndex === 0) {
@@ -467,6 +473,7 @@
           }
           function stepReadToken(cb) {
             highlightWord(wordIndex);
+            const spoken = getSpokenWord(token);
             if (isSymbolTok) {
               if (speakSymbolsToggle && !speakSymbolsToggle.checked) { unhighlightWord(wordIndex); cb(); }
               else { speakPunctuation(token, wordIndex, () => { cb(); }); }
@@ -475,14 +482,14 @@
               else { speakPunctuation(token, wordIndex, () => { cb(); }); }
             } else if (isLongWord) {
               yandexTtsPlay(
-                token,
+                spoken,
                 parseFloat(wordSpeedControl.value),
                 voiceSelect.value,
                 () => {
                   const aux = getAuxExpressions(token);
                   speakAuxExpressions(aux, () => {
                     yandexTtsPlay(
-                      token,
+                      spoken,
                       parseFloat(slowWordSpeedControl.value),
                       voiceSelect.value,
                       () => { unhighlightWord(wordIndex); cb(); }
@@ -492,7 +499,7 @@
               );
             } else {
               yandexTtsPlay(
-                token,
+                spoken,
                 parseFloat(wordSpeedControl.value),
                 voiceSelect.value,
                 () => { unhighlightWord(wordIndex); const aux = getAuxExpressions(token); speakAuxExpressions(aux, () => { cb(); }); }
