@@ -88,7 +88,7 @@
     function applyPreset(name) {
       const presets = {
         slow:   { sentenceSpeed: 0.9, wordSpeed: 0.85, slowWordSpeed: 0.6, auxSpeed: 0.9, wordPause: 260, longWordThreshold: 6 },
-        normal: { sentenceSpeed: 1.0, wordSpeed: 1.0,  slowWordSpeed: 0.5, auxSpeed: 1.0, wordPause: 200, longWordThreshold: 7 },
+        normal: { sentenceSpeed: 1.2, wordSpeed: 0.7,  slowWordSpeed: 0.6, auxSpeed: 1.2, wordPause: 1200, longWordThreshold: 9 },
         fast:   { sentenceSpeed: 1.15, wordSpeed: 1.2, slowWordSpeed: 0.8, auxSpeed: 1.2, wordPause: 120, longWordThreshold: 9 }
       };
       const p = presets[name]; if (!p) return;

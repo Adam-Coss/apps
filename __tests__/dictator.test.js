@@ -96,6 +96,37 @@ describe('dictator core functions', () => {
     expect(longWordThresholdValue.textContent).toBe('9');
   });
 
+  test('applyPreset updates controls for normal preset', () => {
+    const { applyPreset } = moduleExports;
+    const sentenceSpeedControl = document.getElementById('sentence-speed-control');
+    const sentenceSpeedValue = document.getElementById('sentence-speed-value');
+    const wordSpeedControl = document.getElementById('word-speed-control');
+    const wordSpeedValue = document.getElementById('word-speed-value');
+    const slowWordSpeedControl = document.getElementById('slow-word-speed-control');
+    const slowWordSpeedValue = document.getElementById('slow-word-speed-value');
+    const auxSpeedControl = document.getElementById('aux-speed-control');
+    const auxSpeedValue = document.getElementById('aux-speed-value');
+    const wordPauseControl = document.getElementById('word-pause-control');
+    const wordPauseValue = document.getElementById('word-pause-value');
+    const longWordThresholdControl = document.getElementById('long-word-threshold');
+    const longWordThresholdValue = document.getElementById('long-word-threshold-value');
+
+    applyPreset('normal');
+
+    expect(sentenceSpeedControl.value).toBe('1.2');
+    expect(sentenceSpeedValue.textContent).toBe('1.2x');
+    expect(wordSpeedControl.value).toBe('0.7');
+    expect(wordSpeedValue.textContent).toBe('0.7x');
+    expect(slowWordSpeedControl.value).toBe('0.6');
+    expect(slowWordSpeedValue.textContent).toBe('0.6x');
+    expect(auxSpeedControl.value).toBe('1.2');
+    expect(auxSpeedValue.textContent).toBe('1.2x');
+    expect(wordPauseControl.value).toBe('1200');
+    expect(wordPauseValue.textContent).toBe('1200');
+    expect(longWordThresholdControl.value).toBe('9');
+    expect(longWordThresholdValue.textContent).toBe('9');
+  });
+
   test('schedulePauseable respects pause and resume', () => {
     const { schedulePauseable, pauseAll, resumeAll } = moduleExports;
     const spy = jest.fn();
