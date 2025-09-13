@@ -41,3 +41,8 @@ const PUNCTUATION_MAP = {
   '№': 'Номер',
   '′': 'Штрих'
 };
+
+// Export for Node.js environments (e.g., tests)
+if (typeof module !== 'undefined') {
+  module.exports = { PUNCTUATION_MAP };
+}

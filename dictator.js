@@ -623,3 +623,8 @@
     // При загрузке — восстановить настройки и текст
     loadSettingsFromCookies();
     loadTextFromStorage();
+
+    // Export selected functions for tests in Node.js environment
+    if (typeof module !== 'undefined') {
+      module.exports = { schedulePauseable, pauseAll, resumeAll, applyPreset };
+    }
