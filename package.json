@@ -2,7 +2,7 @@
   "name": "apps",
   "version": "1.0.0",
   "description": "",
-  "main": "dictator.js",
+  "main": "dictator/dictator.js",
   "scripts": {
     "test": "jest"
   },
