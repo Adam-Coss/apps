@@ -1,0 +1,115 @@
+/* Включаем box-sizing для всех элементов */
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+  color: #333;
+}
+.container {
+  max-width: 600px;
+  margin: auto;
+  padding: 1rem;
+}
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+.title {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+.book-title {
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+.question {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+.answers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.answer-btn {
+  display: block;
+  padding: 1rem;
+  font-size: 1rem;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f0f0f0;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.answer-btn:hover {
+  background: #e0e0e0;
+}
+.button {
+  padding: 1rem;
+  font-size: 1rem;
+  text-align: center;
+  border: none;
+  border-radius: 6px;
+  background: #2196f3;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  margin: 1rem 0 0 0;
+}
+.button:hover {
+  background: #1976d2;
+}
+.progress-bar-container {
+  background: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  height: 10px;
+  display: none;
+}
+.progress-bar {
+  background: #4caf50;
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s;
+}
+.result-list {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+.result-list li {
+  margin-bottom: 0.5rem;
+}
+@media (max-width: 600px) {
+  .container {
+    padding: 0.5rem;
+  }
+  .card {
+    padding: 0.75rem;
+  }
+  .answer-btn {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+  .button {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+  .question {
+    font-size: 1.2rem;
+  }
+}
