@@ -372,9 +372,7 @@
       const reviewPanel = document.getElementById("reviewPanel");
       const reviewList = document.getElementById("reviewList");
 
-      const state = {
-        segments: [],
-      };
+      const state = { segments: [] };
 
       const setStatus = (message, type = "") => {
         statusBox.textContent = message;
@@ -387,7 +385,6 @@
           dropZone.classList.remove("has-file");
           return;
         }
-
         const sizeMb = file.size / 1024 / 1024;
         fileNameBox.textContent = `${file.name} · ${sizeMb.toFixed(2)} МБ`;
         dropZone.classList.add("has-file");
@@ -406,15 +403,12 @@
       };
 
       const formatTimestamp = (seconds) => {
-        if (typeof seconds !== "number" || Number.isNaN(seconds)) {
-          return "–";
-        }
-
-        const totalSeconds = Math.max(0, Math.floor(seconds));
-        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
-        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
-        const secs = String(totalSeconds % 60).padStart(2, "0");
-        return hrs === "00" ? `${mins}:${secs}` : `${hrs}:${mins}:${secs}`;
+        if (typeof seconds !== "number" || Number.isNaN(seconds)) return "–";
+        const total = Math.max(0, Math.floor(seconds));
+        const h = String(Math.floor(total / 3600)).padStart(2, "0");
+        const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+        const s = String(total % 60).padStart(2, "0");
+        return h === "00" ? `${m}:${s}` : `${h}:${m}:${s}`;
       };
 
       const populateReview = (segments = []) => {
@@ -423,13 +417,12 @@
           reviewPanel.hidden = true;
           return;
         }
-
         const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
         const quoteRegex = /[«»“”]/;
 
-        const highlighted = segments.filter((segment) => {
-          const text = typeof segment?.text === "string" ? segment.text : "";
-          return arabicRegex.test(text) || quoteRegex.test(text);
+        const highlighted = segments.filter((seg) => {
+          const t = typeof seg?.text === "string" ? seg.text : "";
+          return arabicRegex.test(t) || quoteRegex.test(t);
         });
 
         if (highlighted.length === 0) {
@@ -437,16 +430,14 @@
           return;
         }
 
-        highlighted.forEach((segment) => {
-          const item = document.createElement("li");
+        highlighted.forEach((seg) => {
+          const li = document.createElement("li");
           const time = document.createElement("strong");
           const text = document.createElement("span");
-
-          time.textContent = `Отметка ${formatTimestamp(segment.start)} → ${formatTimestamp(segment.end)}`;
-          text.textContent = typeof segment.text === "string" ? segment.text : "";
-
-          item.append(time, text);
-          reviewList.append(item);
+          time.textContent = `Отметка ${formatTimestamp(seg.start)} → ${formatTimestamp(seg.end)}`;
+          text.textContent = typeof seg.text === "string" ? seg.text : "";
+          li.append(time, text);
+          reviewList.append(li);
         });
 
         reviewPanel.hidden = false;
@@ -457,53 +448,36 @@
           setStatus("Нет текста для копирования", "error");
           return;
         }
-
         try {
           await navigator.clipboard.writeText(resultBox.value);
           setStatus("Текст скопирован в буфер обмена");
-        } catch (error) {
-          console.error("Clipboard error", error);
+        } catch (e) {
+          console.error("Clipboard error", e);
           setStatus("Не удалось скопировать текст", "error");
         }
       };
 
       const exportToPdf = () => {
         const text = resultBox.value.trim();
-        if (!text) {
-          setStatus("Нет текста для сохранения в PDF.", "error");
-          return;
-        }
+        if (!text) return setStatus("Нет текста для сохранения в PDF.", "error");
 
         const pdfLib = window.jspdf;
-        if (!pdfLib?.jsPDF) {
-          setStatus("Библиотека для PDF ещё не загружена.", "error");
-          return;
-        }
+        if (!pdfLib?.jsPDF) return setStatus("Библиотека для PDF ещё не загружена.", "error");
 
-        const doc = new pdfLib.jsPDF({
-          orientation: "portrait",
-          unit: "pt",
-          format: "a4",
-        });
-
+        const doc = new pdfLib.jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
         const margin = 48;
         const maxWidth = doc.internal.pageSize.getWidth() - margin * 2;
-        const wrappedText = doc.splitTextToSize(text, maxWidth);
-
+        const wrapped = doc.splitTextToSize(text, maxWidth);
         doc.setFont("Times", "Normal");
         doc.setFontSize(12);
-        doc.text(wrappedText, margin, margin);
+        doc.text(wrapped, margin, margin);
         doc.save("transcript.pdf");
-
         setStatus("PDF успешно сохранён.");
       };
 
       const transcribe = async () => {
         const file = audioInput.files?.[0];
-        if (!file) {
-          setStatus("Сначала выберите аудио-файл", "error");
-          return;
-        }
+        if (!file) return setStatus("Сначала выберите аудио-файл", "error");
 
         transcribeBtn.disabled = true;
         pdfBtn.disabled = true;
@@ -518,24 +492,19 @@
           formData.append("translate", "false");
 
           const language = languageSelect.value;
-          if (language && language !== "auto") {
-            formData.append("language", language);
-          }
+          if (language && language !== "auto") formData.append("language", language);
 
-          const response = await fetch(endpoint, {
-            method: "POST",
-            body: formData,
-          });
+          const response = await fetch(endpoint, { method: "POST", body: formData });
 
           const contentType = response.headers.get("content-type") || "";
           const isJson = contentType.includes("application/json");
           const payload = isJson ? await response.json() : await response.text();
 
           if (!response.ok) {
-            const errorMessage =
+            const msg =
               (payload && payload.error && payload.error.message) ||
               (typeof payload === "string" ? payload : "Не удалось выполнить запрос");
-            throw new Error(errorMessage);
+            throw new Error(msg);
           }
 
           let textResult = "";
@@ -549,7 +518,7 @@
             } else if (Array.isArray(payload.segments)) {
               segments = payload.segments;
               textResult = segments
-                .map((segment) => (typeof segment?.text === "string" ? segment.text : ""))
+                .map((seg) => (typeof seg?.text === "string" ? seg.text : ""))
                 .join("\n");
             } else {
               textResult = JSON.stringify(payload, null, 2);
@@ -572,9 +541,9 @@
           } else {
             setStatus("Получен пустой ответ. Убедитесь, что в аудио есть речь.", "error");
           }
-        } catch (error) {
-          console.error("Transcription error", error);
-          setStatus(error.message || "Ошибка при отправке файла", "error");
+        } catch (e) {
+          console.error("Transcription error", e);
+          setStatus(e.message || "Ошибка при отправке файла", "error");
         } finally {
           transcribeBtn.disabled = false;
         }
@@ -583,52 +552,45 @@
       transcribeBtn.addEventListener("click", transcribe);
       copyBtn.addEventListener("click", copyToClipboard);
       pdfBtn.addEventListener("click", exportToPdf);
+
       clearBtn.addEventListener("click", () => {
         resetUI();
         setStatus("Форма очищена.");
       });
 
-      audioInput.addEventListener("change", (event) => {
-        const [file] = event.target.files || [];
+      audioInput.addEventListener("change", (e) => {
+        const [file] = e.target.files || [];
         handleFileSelect(file);
       });
 
-      const preventDefaults = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      const preventDefaults = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
       };
 
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
+      ["dragenter", "dragover", "dragleave", "drop"].forEach((name) => {
+        dropZone.addEventListener(name, preventDefaults, false);
       });
 
-      ["dragenter", "dragover"].forEach((eventName) => {
-        dropZone.addEventListener(
-          eventName,
-          () => dropZone.classList.add("dragover"),
-          false
-        );
+      ["dragenter", "dragover"].forEach((name) => {
+        dropZone.addEventListener(name, () => dropZone.classList.add("dragover"), false);
       });
 
-      ["dragleave", "drop"].forEach((eventName) => {
-        dropZone.addEventListener(
-          eventName,
-          () => dropZone.classList.remove("dragover"),
-          false
-        );
+      ["dragleave", "drop"].forEach((name) => {
+        dropZone.addEventListener(name, () => dropZone.classList.remove("dragover"), false);
       });
 
-      dropZone.addEventListener("drop", (event) => {
-        const dt = event.dataTransfer;
+      dropZone.addEventListener("drop", (e) => {
+        const dt = e.dataTransfer;
         if (!dt?.files?.length) return;
         const [file] = dt.files;
         audioInput.files = dt.files;
         handleFileSelect(file);
       });
 
-      document.addEventListener("keydown", (event) => {
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
-          event.preventDefault();
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+          e.preventDefault();
           copyToClipboard();
         }
       });
