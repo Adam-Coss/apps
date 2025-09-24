@@ -136,6 +136,7 @@
 
     #indicator { display: none; margin-top: 8px; font-size: 15px; color: #FF7A45; opacity: 0; height: auto; transition: opacity .3s; text-align: center; }
     #indicator.visible { display: block; opacity: 1; }
+    #indicator.error { color: #ff4d4f; font-weight: 600; }
 
     /* ====== Спойлер «Настройки» ====== */
     details.settings {
