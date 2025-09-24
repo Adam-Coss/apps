@@ -11,7 +11,6 @@
         background: radial-gradient(circle at top, #f5f9ff, #eef2ff 45%, #dee4ff);
         min-height: 100%;
       }
-
       body {
         margin: 0;
         min-height: 100vh;
@@ -21,7 +20,6 @@
         padding: 24px;
         background: radial-gradient(circle at top, #f5f9ff, #eef2ff 45%, #dee4ff);
       }
-
       main {
         background: rgba(255, 255, 255, 0.9);
         border-radius: 20px;
@@ -32,7 +30,6 @@
         backdrop-filter: blur(14px);
         box-sizing: border-box;
       }
-
       h1 {
         margin: 0 0 12px;
         font-size: clamp(2rem, 3.6vw, 2.6rem);
@@ -40,7 +37,6 @@
         letter-spacing: -0.03em;
         text-align: center;
       }
-
       p.description {
         color: rgba(30, 42, 102, 0.75);
         margin: 0 auto 28px;
@@ -49,7 +45,6 @@
         max-width: 60ch;
         text-align: center;
       }
-
       .upload-area {
         border: 2px dashed rgba(71, 95, 219, 0.35);
         border-radius: 18px;
@@ -58,227 +53,65 @@
         transition: border-color 0.2s ease, background 0.2s ease;
         background: rgba(255, 255, 255, 0.55);
       }
-
-      .upload-area.dragover {
-        border-color: #475fdb;
-        background: rgba(71, 95, 219, 0.12);
-      }
-
-      .upload-area.has-file {
-        border-color: rgba(71, 95, 219, 0.6);
-        background: rgba(71, 95, 219, 0.08);
-      }
-
-      .upload-area input {
-        display: none;
-      }
-
+      .upload-area.dragover { border-color: #475fdb; background: rgba(71, 95, 219, 0.12); }
+      .upload-area.has-file { border-color: rgba(71, 95, 219, 0.6); background: rgba(71, 95, 219, 0.08); }
+      .upload-area input { display: none; }
       .upload-area label {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        background: linear-gradient(135deg, #4f6afd, #7a5cff);
-        color: #fff;
-        padding: 12px 22px;
-        border-radius: 999px;
-        cursor: pointer;
-        font-weight: 600;
+        display: inline-flex; align-items: center; gap: 12px;
+        background: linear-gradient(135deg, #4f6afd, #7a5cff); color: #fff;
+        padding: 12px 22px; border-radius: 999px; cursor: pointer; font-weight: 600;
         box-shadow: 0 10px 25px rgba(79, 106, 253, 0.35);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
+      .upload-area label:hover { transform: translateY(-1px); box-shadow: 0 16px 35px rgba(79,106,253,0.4); }
+      .file-name { margin-top: 18px; font-weight: 600; color: #333a6d; word-break: break-word; }
+      .hint { margin-top: 6px; color: rgba(30,42,102,0.55); font-size: 0.95rem; }
 
-      .upload-area label:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 16px 35px rgba(79, 106, 253, 0.4);
-      }
-
-      .file-name {
-        margin-top: 18px;
-        font-weight: 600;
-        color: #333a6d;
-        word-break: break-word;
-      }
-
-      .hint {
-        margin-top: 6px;
-        color: rgba(30, 42, 102, 0.55);
-        font-size: 0.95rem;
-      }
-
-      .language-settings {
-        margin: 26px 0 16px;
-        display: grid;
-        gap: 8px;
-      }
-
-      .language-settings label {
-        font-weight: 600;
-        color: #1e2a66;
-      }
-
+      .language-settings { margin: 26px 0 16px; display: grid; gap: 8px; }
+      .language-settings label { font-weight: 600; color: #1e2a66; }
       .language-settings select {
-        width: min(320px, 100%);
-        padding: 10px 14px;
-        border-radius: 12px;
-        border: 1px solid rgba(71, 95, 219, 0.25);
-        background: rgba(255, 255, 255, 0.85);
-        color: #1b234b;
-        font-size: 1rem;
+        width: min(320px, 100%); padding: 10px 14px; border-radius: 12px;
+        border: 1px solid rgba(71,95,219,0.25); background: rgba(255,255,255,0.85);
+        color: #1b234b; font-size: 1rem;
       }
+      .language-settings .hint { margin: 0; font-size: 0.92rem; }
 
-      .language-settings .hint {
-        margin: 0;
-        font-size: 0.92rem;
-      }
-
-      .controls {
-        margin-top: 30px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        align-items: center;
-      }
-
+      .controls { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
       button {
-        padding: 12px 24px;
-        border-radius: 14px;
-        border: none;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        padding: 12px 24px; border-radius: 14px; border: none; font-size: 1rem; font-weight: 600;
+        cursor: pointer; transition: transform .2s, box-shadow .2s, opacity .2s;
       }
+      button.primary { background: linear-gradient(135deg, #475fdb, #7e3ff2); color: #fff; box-shadow: 0 16px 40px rgba(71,95,219,0.35); }
+      button.secondary { background: rgba(71,95,219,0.12); color: #1e2a66; border: 1px solid rgba(71,95,219,0.18); }
+      button.ghost { background: transparent; color: #4654a3; border: 1px dashed rgba(71,95,219,0.45); }
+      button:disabled { cursor: not-allowed; opacity: .55; box-shadow: none; transform: none; }
+      button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 16px 35px rgba(79,106,253,0.4); }
 
-      button.primary {
-        background: linear-gradient(135deg, #475fdb, #7e3ff2);
-        color: white;
-        box-shadow: 0 16px 40px rgba(71, 95, 219, 0.35);
-      }
-
-      button.secondary {
-        background: rgba(71, 95, 219, 0.12);
-        color: #1e2a66;
-        border: 1px solid rgba(71, 95, 219, 0.18);
-      }
-
-      button.ghost {
-        background: transparent;
-        color: #4654a3;
-        border: 1px dashed rgba(71, 95, 219, 0.45);
-      }
-
-      button:disabled {
-        cursor: not-allowed;
-        opacity: 0.55;
-        box-shadow: none;
-        transform: none;
-      }
-
-      button:not(:disabled):hover {
-        transform: translateY(-1px);
-        box-shadow: 0 16px 35px rgba(79, 106, 253, 0.4);
-      }
-
-      .status {
-        min-height: 24px;
-        margin-top: 20px;
-        font-size: 0.98rem;
-        color: rgba(30, 42, 102, 0.75);
-      }
-
-      .status.error {
-        color: #c72e4f;
-        font-weight: 600;
-      }
+      .status { min-height: 24px; margin-top: 20px; font-size: 0.98rem; color: rgba(30,42,102,0.75); }
+      .status.error { color: #c72e4f; font-weight: 600; }
 
       textarea#result {
-        margin-top: 20px;
-        width: 100%;
-        min-height: 240px;
-        border-radius: 18px;
-        border: 1px solid rgba(71, 95, 219, 0.18);
-        padding: 18px;
-        resize: vertical;
-        font-size: 1.02rem;
-        line-height: 1.65;
-        background: rgba(255, 255, 255, 0.7);
-        color: #1b234b;
+        margin-top: 20px; width: 100%; min-height: 240px; border-radius: 18px;
+        border: 1px solid rgba(71,95,219,0.18); padding: 18px; resize: vertical;
+        font-size: 1.02rem; line-height: 1.65; background: rgba(255,255,255,0.7); color: #1b234b;
         box-sizing: border-box;
       }
 
-      .review-panel {
-        margin-top: 26px;
-        padding: 20px;
-        border-radius: 16px;
-        border: 1px solid rgba(71, 95, 219, 0.2);
-        background: rgba(71, 95, 219, 0.08);
-      }
+      .review-panel { margin-top: 26px; padding: 20px; border-radius: 16px; border: 1px solid rgba(71,95,219,0.2); background: rgba(71,95,219,0.08); }
+      .review-panel h2 { margin: 0 0 8px; font-size: 1.2rem; color: #1e2a66; }
+      .review-panel p { margin: 0 0 12px; color: rgba(30,42,102,0.75); font-size: 0.95rem; }
+      .review-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+      .review-panel li { padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.9); border: 1px solid rgba(71,95,219,0.15); display: grid; gap: 6px; }
+      .review-panel strong { font-size: 0.9rem; color: #475fdb; }
+      .review-panel span { font-size: 0.98rem; line-height: 1.6; color: #1b234b; }
 
-      .review-panel h2 {
-        margin: 0 0 8px;
-        font-size: 1.2rem;
-        color: #1e2a66;
-      }
-
-      .review-panel p {
-        margin: 0 0 12px;
-        color: rgba(30, 42, 102, 0.75);
-        font-size: 0.95rem;
-      }
-
-      .review-panel ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: grid;
-        gap: 10px;
-      }
-
-      .review-panel li {
-        padding: 12px 14px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(71, 95, 219, 0.15);
-        display: grid;
-        gap: 6px;
-      }
-
-      .review-panel strong {
-        font-size: 0.9rem;
-        color: #475fdb;
-      }
-
-      .review-panel span {
-        font-size: 0.98rem;
-        line-height: 1.6;
-        color: #1b234b;
-      }
-
-      footer {
-        margin-top: 26px;
-        font-size: 0.88rem;
-        color: rgba(30, 42, 102, 0.6);
-        text-align: center;
-        line-height: 1.5;
-      }
+      footer { margin-top: 26px; font-size: 0.88rem; color: rgba(30,42,102,0.6); text-align: center; line-height: 1.5; }
 
       @media (max-width: 640px) {
-        main {
-          padding: 24px 18px;
-        }
-
-        .language-settings select {
-          width: 100%;
-        }
-
-        .controls {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        button {
-          width: 100%;
-        }
+        main { padding: 24px 18px; }
+        .language-settings select { width: 100%; }
+        .controls { flex-direction: column; align-items: stretch; }
+        button { width: 100%; }
       }
     </style>
     <script
@@ -301,10 +134,7 @@
         <input type="file" id="audioInput" accept="audio/*" />
         <label for="audioInput">Выбрать аудио-файл</label>
         <div class="file-name" id="fileName">Файл не выбран</div>
-        <div class="hint">
-          Поддерживаются форматы: mp3, wav, m4a, ogg, webm и другие. Можно
-          перетащить файл в это окно.
-        </div>
+        <div class="hint">Поддерживаются форматы: mp3, wav, m4a, ogg, webm и другие. Можно перетащить файл в это окно.</div>
       </section>
 
       <section class="language-settings">
@@ -314,45 +144,29 @@
           <option value="ru">Русский</option>
           <option value="ar">Арабский</option>
         </select>
-        <p class="hint">
-          Температура модели фиксирована на 0, чтобы не искажать цитаты. При
-          монолингвальной записи выберите нужный язык вручную.
-        </p>
+        <p class="hint">Температура модели фиксирована на 0, чтобы не искажать цитаты. При монолингвальной записи выберите язык вручную.</p>
       </section>
 
       <div class="controls">
-        <button class="primary" id="transcribeBtn" type="button">
-          Транскрибировать
-        </button>
-        <button class="secondary" id="copyBtn" type="button">
-          Скопировать текст
-        </button>
-        <button class="secondary" id="pdfBtn" type="button" disabled>
-          Экспорт в PDF
-        </button>
+        <button class="primary" id="transcribeBtn" type="button">Транскрибировать</button>
+        <button class="secondary" id="copyBtn" type="button">Скопировать текст</button>
+        <button class="secondary" id="pdfBtn" type="button" disabled>Экспорт в PDF</button>
         <button class="ghost" id="clearBtn" type="button">Очистить</button>
       </div>
 
       <div class="status" id="status" role="status" aria-live="polite"></div>
 
-      <textarea
-        id="result"
-        placeholder="Здесь появится текст стенограммы"
-        readonly
-      ></textarea>
+      <textarea id="result" placeholder="Здесь появится текст стенограммы" readonly></textarea>
 
       <section class="review-panel" id="reviewPanel" hidden>
         <h2>Проверьте ключевые фрагменты</h2>
-        <p>
-          Эти сегменты содержат арабский текст или кавычки. Сверьтесь с
-          оригиналом, чтобы убедиться, что стенограмма не искажена.
-        </p>
+        <p>Эти сегменты содержат арабский текст или кавычки. Сверьтесь с оригиналом.</p>
         <ul id="reviewList"></ul>
       </section>
 
       <footer>
         Версия 2.0 • Расшифровка выполняется через Cloudflare Worker с моделью
-        <strong>whisper-1</strong> по конечной точке
+        <strong>large-v3</strong> по конечной точке
         <code>/v1/audio/transcriptions</code>.
       </footer>
     </main>
@@ -444,10 +258,7 @@
       };
 
       const copyToClipboard = async () => {
-        if (!resultBox.value) {
-          setStatus("Нет текста для копирования", "error");
-          return;
-        }
+        if (!resultBox.value) return setStatus("Нет текста для копирования", "error");
         try {
           await navigator.clipboard.writeText(resultBox.value);
           setStatus("Текст скопирован в буфер обмена");
@@ -481,12 +292,12 @@
 
         transcribeBtn.disabled = true;
         pdfBtn.disabled = true;
-        setStatus("Отправляем аудио в Whisper, подождите…");
+        setStatus("Отправляем аудио в large-v3, подождите…");
 
         try {
           const formData = new FormData();
           formData.append("file", file, file.name);
-          formData.append("model", "whisper-1");
+          formData.append("model", "large-v3");                // <-- large-v3
           formData.append("response_format", "verbose_json");
           formData.append("temperature", "0");
           formData.append("translate", "false");
@@ -553,32 +364,15 @@
       copyBtn.addEventListener("click", copyToClipboard);
       pdfBtn.addEventListener("click", exportToPdf);
 
-      clearBtn.addEventListener("click", () => {
-        resetUI();
-        setStatus("Форма очищена.");
-      });
-
       audioInput.addEventListener("change", (e) => {
         const [file] = e.target.files || [];
         handleFileSelect(file);
       });
 
-      const preventDefaults = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      };
-
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((name) => {
-        dropZone.addEventListener(name, preventDefaults, false);
-      });
-
-      ["dragenter", "dragover"].forEach((name) => {
-        dropZone.addEventListener(name, () => dropZone.classList.add("dragover"), false);
-      });
-
-      ["dragleave", "drop"].forEach((name) => {
-        dropZone.addEventListener(name, () => dropZone.classList.remove("dragover"), false);
-      });
+      const preventDefaults = (e) => { e.preventDefault(); e.stopPropagation(); };
+      ["dragenter","dragover","dragleave","drop"].forEach((n)=>dropZone.addEventListener(n, preventDefaults, false));
+      ["dragenter","dragover"].forEach((n)=>dropZone.addEventListener(n, ()=>dropZone.classList.add("dragover"), false));
+      ["dragleave","drop"].forEach((n)=>dropZone.addEventListener(n, ()=>dropZone.classList.remove("dragover"), false));
 
       dropZone.addEventListener("drop", (e) => {
         const dt = e.dataTransfer;
