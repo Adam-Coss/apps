@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DITR Whisper Транскрибатор</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #f5f9ff, #eef2ff 45%, #dee4ff);
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: radial-gradient(circle at top, #f5f9ff, #eef2ff 45%, #dee4ff);
+      }
+
+      main {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(59, 87, 255, 0.12);
+        padding: 32px clamp(24px, 5vw, 48px);
+        max-width: min(900px, 100%);
+        width: 100%;
+        backdrop-filter: blur(14px);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: clamp(2rem, 3.6vw, 2.8rem);
+        color: #1e2a66;
+        letter-spacing: -0.03em;
+      }
+
+      p.description {
+        color: rgba(30, 42, 102, 0.75);
+        margin-bottom: 24px;
+        line-height: 1.6;
+        font-size: 1.05rem;
+      }
+
+      .upload-area {
+        border: 2px dashed rgba(71, 95, 219, 0.35);
+        border-radius: 18px;
+        padding: clamp(28px, 6vw, 56px);
+        text-align: center;
+        transition: border-color 0.2s ease, background 0.2s ease;
+        background: rgba(255, 255, 255, 0.5);
+      }
+
+      .upload-area.dragover {
+        border-color: #475fdb;
+        background: rgba(71, 95, 219, 0.1);
+      }
+
+      .upload-area.has-file {
+        border-color: rgba(71, 95, 219, 0.6);
+        background: rgba(71, 95, 219, 0.08);
+      }
+
+      .upload-area input {
+        display: none;
+      }
+
+      .upload-area label {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, #4f6afd, #7a5cff);
+        color: #fff;
+        padding: 12px 22px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 600;
+        box-shadow: 0 10px 25px rgba(79, 106, 253, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .upload-area label:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 35px rgba(79, 106, 253, 0.4);
+      }
+
+      .file-name {
+        margin-top: 18px;
+        font-weight: 600;
+        color: #333a6d;
+        word-break: break-word;
+      }
+
+      .hint {
+        margin-top: 6px;
+        color: rgba(30, 42, 102, 0.55);
+        font-size: 0.95rem;
+      }
+
+      .controls {
+        margin-top: 28px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      button.primary {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #475fdb, #7e3ff2);
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        box-shadow: 0 16px 40px rgba(71, 95, 219, 0.35);
+      }
+
+      button.primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+        box-shadow: none;
+        transform: none;
+      }
+
+      button.secondary {
+        padding: 12px 20px;
+        border-radius: 14px;
+        border: 1px solid rgba(71, 95, 219, 0.25);
+        background: rgba(71, 95, 219, 0.08);
+        color: #1e2a66;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+
+      button.secondary:hover {
+        background: rgba(71, 95, 219, 0.15);
+      }
+
+      .status {
+        min-height: 24px;
+        margin-top: 20px;
+        font-size: 0.98rem;
+        color: rgba(30, 42, 102, 0.75);
+      }
+
+      .status.error {
+        color: #c72e4f;
+      }
+
+      textarea#result {
+        margin-top: 20px;
+        width: 100%;
+        min-height: 220px;
+        border-radius: 18px;
+        border: 1px solid rgba(71, 95, 219, 0.18);
+        padding: 18px;
+        resize: vertical;
+        font-size: 1.02rem;
+        line-height: 1.65;
+        background: rgba(255, 255, 255, 0.7);
+        color: #1b234b;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 24px 18px;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        button.primary,
+        button.secondary {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Транскрибатор DITR</h1>
+      <p class="description">
+        Загрузите аудио-файл, и приложение отправит его в модель Whisper для получения
+        текста. Все запросы выполняются напрямую через защищённый прокси, поэтому ваш
+        API-ключ в коде не используется.
+      </p>
+
+      <section class="upload-area" id="dropZone">
+        <input type="file" id="audioInput" accept="audio/*" />
+        <label for="audioInput">Выбрать аудио-файл</label>
+        <div class="file-name" id="fileName">Файл не выбран</div>
+        <div class="hint">Поддерживаются форматы: mp3, wav, m4a, ogg, webm и другие.</div>
+      </section>
+
+      <div class="controls">
+        <button class="primary" id="transcribeBtn">Транскрибировать</button>
+        <button class="secondary" id="copyBtn">Скопировать текст</button>
+        <button class="secondary" id="clearBtn">Очистить</button>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <textarea id="result" placeholder="Здесь появится текст" readonly></textarea>
+    </main>
+
+    <script>
+      const endpoint = "https://gelani-openai-key-transcribe-diroya.rs-stigma.workers.dev/";
+      const audioInput = document.getElementById("audioInput");
+      const transcribeBtn = document.getElementById("transcribeBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const statusBox = document.getElementById("status");
+      const resultBox = document.getElementById("result");
+      const fileNameBox = document.getElementById("fileName");
+      const dropZone = document.getElementById("dropZone");
+
+      const setStatus = (message, type = "") => {
+        statusBox.textContent = message;
+        statusBox.className = `status ${type}`.trim();
+      };
+
+      const resetUI = () => {
+        audioInput.value = "";
+        fileNameBox.textContent = "Файл не выбран";
+        resultBox.value = "";
+        setStatus("", "");
+        dropZone.classList.remove("has-file");
+      };
+
+      const handleFileSelect = (file) => {
+        if (!file) {
+          fileNameBox.textContent = "Файл не выбран";
+          dropZone.classList.remove("has-file");
+          return;
+        }
+
+        fileNameBox.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} МБ`;
+        dropZone.classList.add("has-file");
+      };
+
+      const copyToClipboard = async () => {
+        if (!resultBox.value) {
+          setStatus("Нет текста для копирования", "error");
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(resultBox.value);
+          setStatus("Текст скопирован в буфер обмена");
+        } catch (error) {
+          console.error(error);
+          setStatus("Не удалось скопировать текст", "error");
+        }
+      };
+
+      transcribeBtn.addEventListener("click", async () => {
+        const file = audioInput.files?.[0];
+        if (!file) {
+          setStatus("Сначала выберите аудио-файл", "error");
+          return;
+        }
+
+        transcribeBtn.disabled = true;
+        setStatus("Загружаем аудио и ждём ответ Whisper…");
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file, file.name);
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          const contentType = response.headers.get("content-type") || "";
+          const isJson = contentType.includes("application/json");
+          const payload = isJson ? await response.json() : await response.text();
+
+          if (!response.ok) {
+            const errorMessage =
+              (payload && payload.error && payload.error.message) ||
+              (typeof payload === "string" ? payload : "Не удалось выполнить запрос");
+            throw new Error(errorMessage);
+          }
+
+          let textResult = "";
+          if (payload) {
+            if (typeof payload === "string") {
+              textResult = payload;
+            } else if (payload.text) {
+              textResult = payload.text;
+            } else if (Array.isArray(payload.segments)) {
+              textResult = payload.segments.map((segment) => segment.text).join(" ");
+            }
+          }
+
+          if (!textResult) {
+            textResult = JSON.stringify(payload, null, 2);
+          }
+
+          resultBox.value = textResult.trim();
+          setStatus("Готово! Результат можно скопировать.");
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message || "Ошибка при отправке файла", "error");
+        } finally {
+          transcribeBtn.disabled = false;
+        }
+      });
+
+      copyBtn.addEventListener("click", () => {
+        copyToClipboard();
+      });
+
+      clearBtn.addEventListener("click", () => {
+        resetUI();
+        setStatus("Форма очищена.");
+      });
+
+      audioInput.addEventListener("change", (event) => {
+        const file = event.target.files?.[0];
+        handleFileSelect(file);
+      });
+
+      const preventDefaults = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropZone.addEventListener(
+          eventName,
+          () => dropZone.classList.add("dragover"),
+          false
+        );
+      });
+
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(
+          eventName,
+          () => dropZone.classList.remove("dragover"),
+          false
+        );
+      });
+
+      dropZone.addEventListener("drop", (event) => {
+        const dt = event.dataTransfer;
+        if (!dt?.files?.length) return;
+        const file = dt.files[0];
+        audioInput.files = dt.files;
+        handleFileSelect(file);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
+          event.preventDefault();
+          copyToClipboard();
+        }
+      });
+    </script>
+  </body>
+</html>
