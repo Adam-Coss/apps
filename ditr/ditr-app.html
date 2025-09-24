@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>DITR Whisper Транскрибатор</title>
+    <title>DITR • Стенография аудио</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -23,27 +23,31 @@
       }
 
       main {
-        background: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.9);
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(59, 87, 255, 0.12);
         padding: 32px clamp(24px, 5vw, 48px);
-        max-width: min(900px, 100%);
+        max-width: min(940px, 100%);
         width: 100%;
         backdrop-filter: blur(14px);
+        box-sizing: border-box;
       }
 
       h1 {
-        margin-top: 0;
-        font-size: clamp(2rem, 3.6vw, 2.8rem);
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 3.6vw, 2.6rem);
         color: #1e2a66;
         letter-spacing: -0.03em;
+        text-align: center;
       }
 
       p.description {
         color: rgba(30, 42, 102, 0.75);
-        margin-bottom: 24px;
+        margin: 0 auto 28px;
         line-height: 1.6;
         font-size: 1.05rem;
+        max-width: 60ch;
+        text-align: center;
       }
 
       .upload-area {
@@ -52,12 +56,12 @@
         padding: clamp(28px, 6vw, 56px);
         text-align: center;
         transition: border-color 0.2s ease, background 0.2s ease;
-        background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.55);
       }
 
       .upload-area.dragover {
         border-color: #475fdb;
-        background: rgba(71, 95, 219, 0.1);
+        background: rgba(71, 95, 219, 0.12);
       }
 
       .upload-area.has-file {
@@ -102,7 +106,7 @@
       }
 
       .language-settings {
-        margin: 24px 0 12px;
+        margin: 26px 0 16px;
         display: grid;
         gap: 8px;
       }
@@ -117,7 +121,7 @@
         padding: 10px 14px;
         border-radius: 12px;
         border: 1px solid rgba(71, 95, 219, 0.25);
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.85);
         color: #1b234b;
         font-size: 1rem;
       }
@@ -128,46 +132,51 @@
       }
 
       .controls {
-        margin-top: 28px;
+        margin-top: 30px;
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
         align-items: center;
       }
 
-      button.primary {
+      button {
         padding: 12px 24px;
-        border: none;
         border-radius: 14px;
-        background: linear-gradient(135deg, #475fdb, #7e3ff2);
-        color: white;
+        border: none;
         font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
         transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, #475fdb, #7e3ff2);
+        color: white;
         box-shadow: 0 16px 40px rgba(71, 95, 219, 0.35);
       }
 
-      button.primary:disabled {
+      button.secondary {
+        background: rgba(71, 95, 219, 0.12);
+        color: #1e2a66;
+        border: 1px solid rgba(71, 95, 219, 0.18);
+      }
+
+      button.ghost {
+        background: transparent;
+        color: #4654a3;
+        border: 1px dashed rgba(71, 95, 219, 0.45);
+      }
+
+      button:disabled {
         cursor: not-allowed;
-        opacity: 0.5;
+        opacity: 0.55;
         box-shadow: none;
         transform: none;
       }
 
-      button.secondary {
-        padding: 12px 20px;
-        border-radius: 14px;
-        border: 1px solid rgba(71, 95, 219, 0.25);
-        background: rgba(71, 95, 219, 0.08);
-        color: #1e2a66;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s ease, transform 0.2s ease;
-      }
-
-      button.secondary:hover {
-        background: rgba(71, 95, 219, 0.15);
+      button:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 35px rgba(79, 106, 253, 0.4);
       }
 
       .status {
@@ -179,10 +188,26 @@
 
       .status.error {
         color: #c72e4f;
+        font-weight: 600;
+      }
+
+      textarea#result {
+        margin-top: 20px;
+        width: 100%;
+        min-height: 240px;
+        border-radius: 18px;
+        border: 1px solid rgba(71, 95, 219, 0.18);
+        padding: 18px;
+        resize: vertical;
+        font-size: 1.02rem;
+        line-height: 1.65;
+        background: rgba(255, 255, 255, 0.7);
+        color: #1b234b;
+        box-sizing: border-box;
       }
 
       .review-panel {
-        margin-top: 24px;
+        margin-top: 26px;
         padding: 20px;
         border-radius: 16px;
         border: 1px solid rgba(71, 95, 219, 0.2);
@@ -212,8 +237,8 @@
       .review-panel li {
         padding: 12px 14px;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.85);
-        border: 1px solid rgba(71, 95, 219, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(71, 95, 219, 0.15);
         display: grid;
         gap: 6px;
       }
@@ -229,18 +254,12 @@
         color: #1b234b;
       }
 
-      textarea#result {
-        margin-top: 20px;
-        width: 100%;
-        min-height: 220px;
-        border-radius: 18px;
-        border: 1px solid rgba(71, 95, 219, 0.18);
-        padding: 18px;
-        resize: vertical;
-        font-size: 1.02rem;
-        line-height: 1.65;
-        background: rgba(255, 255, 255, 0.7);
-        color: #1b234b;
+      footer {
+        margin-top: 26px;
+        font-size: 0.88rem;
+        color: rgba(30, 42, 102, 0.6);
+        text-align: center;
+        line-height: 1.5;
       }
 
       @media (max-width: 640px) {
@@ -257,27 +276,35 @@
           align-items: stretch;
         }
 
-        button.primary,
-        button.secondary {
+        button {
           width: 100%;
         }
       }
     </style>
+    <script
+      src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
+      integrity="sha384-2H0eAV/QXpVZl8vGeOawxDFUY8ailqXF/w3vGN9VOGBev5nYeD1yfknhk+aoCA8X"
+      crossorigin="anonymous"
+      defer
+    ></script>
   </head>
   <body>
     <main>
       <h1>Транскрибатор DITR</h1>
       <p class="description">
-        Загрузите аудио-файл, и приложение отправит его в модель Whisper для получения
-        текста. Все запросы выполняются напрямую через защищённый прокси, поэтому ваш
-        API-ключ в коде не используется.
+        Загрузите аудио-файл, чтобы получить дословную стенограмму без перевода.
+        Приложение использует модель Whisper через защищённый прокси и помогает
+        контролировать арабские цитаты из Корана, хадисов и поэтов.
       </p>
 
       <section class="upload-area" id="dropZone">
         <input type="file" id="audioInput" accept="audio/*" />
         <label for="audioInput">Выбрать аудио-файл</label>
         <div class="file-name" id="fileName">Файл не выбран</div>
-        <div class="hint">Поддерживаются форматы: mp3, wav, m4a, ogg, webm и другие.</div>
+        <div class="hint">
+          Поддерживаются форматы: mp3, wav, m4a, ogg, webm и другие. Можно
+          перетащить файл в это окно.
+        </div>
       </section>
 
       <section class="language-settings">
@@ -288,29 +315,46 @@
           <option value="ar">Арабский</option>
         </select>
         <p class="hint">
-          Whisper лучше фиксирует цитаты Корана, хадисов и поэтов при низкой температуре.
-          Переключите язык, если диктор говорит только на одном из них.
+          Температура модели фиксирована на 0, чтобы не искажать цитаты. При
+          монолингвальной записи выберите нужный язык вручную.
         </p>
       </section>
 
       <div class="controls">
-        <button class="primary" id="transcribeBtn">Транскрибировать</button>
-        <button class="secondary" id="copyBtn">Скопировать текст</button>
-        <button class="secondary" id="clearBtn">Очистить</button>
+        <button class="primary" id="transcribeBtn" type="button">
+          Транскрибировать
+        </button>
+        <button class="secondary" id="copyBtn" type="button">
+          Скопировать текст
+        </button>
+        <button class="secondary" id="pdfBtn" type="button" disabled>
+          Экспорт в PDF
+        </button>
+        <button class="ghost" id="clearBtn" type="button">Очистить</button>
       </div>
 
-      <div class="status" id="status"></div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
 
-      <textarea id="result" placeholder="Здесь появится текст" readonly></textarea>
+      <textarea
+        id="result"
+        placeholder="Здесь появится текст стенограммы"
+        readonly
+      ></textarea>
 
       <section class="review-panel" id="reviewPanel" hidden>
         <h2>Проверьте ключевые фрагменты</h2>
         <p>
-          Эти сегменты содержат арабский текст или цитаты. Сверьтесь с оригиналом, чтобы
-          убедиться, что стенограмма не искажена.
+          Эти сегменты содержат арабский текст или кавычки. Сверьтесь с
+          оригиналом, чтобы убедиться, что стенограмма не искажена.
         </p>
         <ul id="reviewList"></ul>
       </section>
+
+      <footer>
+        Версия 2.0 • Расшифровка выполняется через Cloudflare Worker с моделью
+        <strong>whisper-1</strong> по конечной точке
+        <code>/v1/audio/transcriptions</code>.
+      </footer>
     </main>
 
     <script>
@@ -318,6 +362,7 @@
       const audioInput = document.getElementById("audioInput");
       const transcribeBtn = document.getElementById("transcribeBtn");
       const copyBtn = document.getElementById("copyBtn");
+      const pdfBtn = document.getElementById("pdfBtn");
       const clearBtn = document.getElementById("clearBtn");
       const statusBox = document.getElementById("status");
       const resultBox = document.getElementById("result");
@@ -327,19 +372,13 @@
       const reviewPanel = document.getElementById("reviewPanel");
       const reviewList = document.getElementById("reviewList");
 
+      const state = {
+        segments: [],
+      };
+
       const setStatus = (message, type = "") => {
         statusBox.textContent = message;
         statusBox.className = `status ${type}`.trim();
-      };
-
-      const resetUI = () => {
-        audioInput.value = "";
-        fileNameBox.textContent = "Файл не выбран";
-        resultBox.value = "";
-        setStatus("", "");
-        dropZone.classList.remove("has-file");
-        reviewPanel.hidden = true;
-        reviewList.innerHTML = "";
       };
 
       const handleFileSelect = (file) => {
@@ -349,23 +388,21 @@
           return;
         }
 
-        fileNameBox.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} МБ`;
+        const sizeMb = file.size / 1024 / 1024;
+        fileNameBox.textContent = `${file.name} · ${sizeMb.toFixed(2)} МБ`;
         dropZone.classList.add("has-file");
       };
 
-      const copyToClipboard = async () => {
-        if (!resultBox.value) {
-          setStatus("Нет текста для копирования", "error");
-          return;
-        }
-
-        try {
-          await navigator.clipboard.writeText(resultBox.value);
-          setStatus("Текст скопирован в буфер обмена");
-        } catch (error) {
-          console.error(error);
-          setStatus("Не удалось скопировать текст", "error");
-        }
+      const resetUI = () => {
+        audioInput.value = "";
+        resultBox.value = "";
+        state.segments = [];
+        fileNameBox.textContent = "Файл не выбран";
+        dropZone.classList.remove("has-file");
+        reviewPanel.hidden = true;
+        reviewList.innerHTML = "";
+        pdfBtn.disabled = true;
+        setStatus("");
       };
 
       const formatTimestamp = (seconds) => {
@@ -405,20 +442,63 @@
           const time = document.createElement("strong");
           const text = document.createElement("span");
 
-          time.textContent = `Отметка ${formatTimestamp(segment.start)} → ${formatTimestamp(
-            segment.end
-          )}`;
+          time.textContent = `Отметка ${formatTimestamp(segment.start)} → ${formatTimestamp(segment.end)}`;
           text.textContent = typeof segment.text === "string" ? segment.text : "";
 
-          item.appendChild(time);
-          item.appendChild(text);
-          reviewList.appendChild(item);
+          item.append(time, text);
+          reviewList.append(item);
         });
 
         reviewPanel.hidden = false;
       };
 
-      transcribeBtn.addEventListener("click", async () => {
+      const copyToClipboard = async () => {
+        if (!resultBox.value) {
+          setStatus("Нет текста для копирования", "error");
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(resultBox.value);
+          setStatus("Текст скопирован в буфер обмена");
+        } catch (error) {
+          console.error("Clipboard error", error);
+          setStatus("Не удалось скопировать текст", "error");
+        }
+      };
+
+      const exportToPdf = () => {
+        const text = resultBox.value.trim();
+        if (!text) {
+          setStatus("Нет текста для сохранения в PDF.", "error");
+          return;
+        }
+
+        const pdfLib = window.jspdf;
+        if (!pdfLib?.jsPDF) {
+          setStatus("Библиотека для PDF ещё не загружена.", "error");
+          return;
+        }
+
+        const doc = new pdfLib.jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: "a4",
+        });
+
+        const margin = 48;
+        const maxWidth = doc.internal.pageSize.getWidth() - margin * 2;
+        const wrappedText = doc.splitTextToSize(text, maxWidth);
+
+        doc.setFont("Times", "Normal");
+        doc.setFontSize(12);
+        doc.text(wrappedText, margin, margin);
+        doc.save("transcript.pdf");
+
+        setStatus("PDF успешно сохранён.");
+      };
+
+      const transcribe = async () => {
         const file = audioInput.files?.[0];
         if (!file) {
           setStatus("Сначала выберите аудио-файл", "error");
@@ -426,7 +506,8 @@
         }
 
         transcribeBtn.disabled = true;
-        setStatus("Загружаем аудио и ждём ответ Whisper…");
+        pdfBtn.disabled = true;
+        setStatus("Отправляем аудио в Whisper, подождите…");
 
         try {
           const formData = new FormData();
@@ -458,51 +539,57 @@
           }
 
           let textResult = "";
-          if (payload) {
-            if (typeof payload === "string") {
-              textResult = payload;
-            } else if (payload.text) {
+          let segments = [];
+
+          if (typeof payload === "string") {
+            textResult = payload;
+          } else if (payload) {
+            if (typeof payload.text === "string" && payload.text.trim()) {
               textResult = payload.text;
             } else if (Array.isArray(payload.segments)) {
-              textResult = payload.segments
+              segments = payload.segments;
+              textResult = segments
                 .map((segment) => (typeof segment?.text === "string" ? segment.text : ""))
                 .join("\n");
+            } else {
+              textResult = JSON.stringify(payload, null, 2);
             }
           }
 
-          if (!textResult) {
-            textResult = JSON.stringify(payload, null, 2);
-          }
+          resultBox.value = textResult.trim();
+          state.segments = segments;
 
-          resultBox.value = textResult;
-
-          if (Array.isArray(payload?.segments)) {
-            populateReview(payload.segments);
+          if (segments.length > 0) {
+            populateReview(segments);
           } else {
             reviewPanel.hidden = true;
             reviewList.innerHTML = "";
           }
 
-          setStatus("Готово! Проверьте цитаты и скопируйте стенограмму.");
+          if (resultBox.value) {
+            pdfBtn.disabled = false;
+            setStatus("Готово! Проверьте цитаты и при необходимости экспортируйте.");
+          } else {
+            setStatus("Получен пустой ответ. Убедитесь, что в аудио есть речь.", "error");
+          }
         } catch (error) {
-          console.error(error);
+          console.error("Transcription error", error);
           setStatus(error.message || "Ошибка при отправке файла", "error");
         } finally {
           transcribeBtn.disabled = false;
         }
-      });
+      };
 
-      copyBtn.addEventListener("click", () => {
-        copyToClipboard();
-      });
-
+      transcribeBtn.addEventListener("click", transcribe);
+      copyBtn.addEventListener("click", copyToClipboard);
+      pdfBtn.addEventListener("click", exportToPdf);
       clearBtn.addEventListener("click", () => {
         resetUI();
         setStatus("Форма очищена.");
       });
 
       audioInput.addEventListener("change", (event) => {
-        const file = event.target.files?.[0];
+        const [file] = event.target.files || [];
         handleFileSelect(file);
       });
 
@@ -534,7 +621,7 @@
       dropZone.addEventListener("drop", (event) => {
         const dt = event.dataTransfer;
         if (!dt?.files?.length) return;
-        const file = dt.files[0];
+        const [file] = dt.files;
         audioInput.files = dt.files;
         handleFileSelect(file);
       });
