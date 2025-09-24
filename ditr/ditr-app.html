@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DITR • Стенография аудио</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #f5f9ff, #eef2ff 45%, #dee4ff);
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: radial-gradient(circle at top, #f5f9ff, #eef2ff 45%, #dee4ff);
+      }
+
+      main {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(59, 87, 255, 0.12);
+        padding: 32px clamp(24px, 5vw, 48px);
+        max-width: min(940px, 100%);
+        width: 100%;
+        backdrop-filter: blur(14px);
+        box-sizing: border-box;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 3.6vw, 2.6rem);
+        color: #1e2a66;
+        letter-spacing: -0.03em;
+        text-align: center;
+      }
+
+      p.description {
+        color: rgba(30, 42, 102, 0.75);
+        margin: 0 auto 28px;
+        line-height: 1.6;
+        font-size: 1.05rem;
+        max-width: 60ch;
+        text-align: center;
+      }
+
+      .upload-area {
+        border: 2px dashed rgba(71, 95, 219, 0.35);
+        border-radius: 18px;
+        padding: clamp(28px, 6vw, 56px);
+        text-align: center;
+        transition: border-color 0.2s ease, background 0.2s ease;
+        background: rgba(255, 255, 255, 0.55);
+      }
+
+      .upload-area.dragover {
+        border-color: #475fdb;
+        background: rgba(71, 95, 219, 0.12);
+      }
+
+      .upload-area.has-file {
+        border-color: rgba(71, 95, 219, 0.6);
+        background: rgba(71, 95, 219, 0.08);
+      }
+
+      .upload-area input {
+        display: none;
+      }
+
+      .upload-area label {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: linear-gradient(135deg, #4f6afd, #7a5cff);
+        color: #fff;
+        padding: 12px 22px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 600;
+        box-shadow: 0 10px 25px rgba(79, 106, 253, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .upload-area label:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 35px rgba(79, 106, 253, 0.4);
+      }
+
+      .file-name {
+        margin-top: 18px;
+        font-weight: 600;
+        color: #333a6d;
+        word-break: break-word;
+      }
+
+      .hint {
+        margin-top: 6px;
+        color: rgba(30, 42, 102, 0.55);
+        font-size: 0.95rem;
+      }
+
+      .language-settings {
+        margin: 26px 0 16px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .language-settings label {
+        font-weight: 600;
+        color: #1e2a66;
+      }
+
+      .language-settings select {
+        width: min(320px, 100%);
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(71, 95, 219, 0.25);
+        background: rgba(255, 255, 255, 0.85);
+        color: #1b234b;
+        font-size: 1rem;
+      }
+
+      .language-settings .hint {
+        margin: 0;
+        font-size: 0.92rem;
+      }
+
+      .controls {
+        margin-top: 30px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      button {
+        padding: 12px 24px;
+        border-radius: 14px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, #475fdb, #7e3ff2);
+        color: white;
+        box-shadow: 0 16px 40px rgba(71, 95, 219, 0.35);
+      }
+
+      button.secondary {
+        background: rgba(71, 95, 219, 0.12);
+        color: #1e2a66;
+        border: 1px solid rgba(71, 95, 219, 0.18);
+      }
+
+      button.ghost {
+        background: transparent;
+        color: #4654a3;
+        border: 1px dashed rgba(71, 95, 219, 0.45);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        box-shadow: none;
+        transform: none;
+      }
+
+      button:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 35px rgba(79, 106, 253, 0.4);
+      }
+
+      .status {
+        min-height: 24px;
+        margin-top: 20px;
+        font-size: 0.98rem;
+        color: rgba(30, 42, 102, 0.75);
+      }
+
+      .status.error {
+        color: #c72e4f;
+        font-weight: 600;
+      }
+
+      textarea#result {
+        margin-top: 20px;
+        width: 100%;
+        min-height: 240px;
+        border-radius: 18px;
+        border: 1px solid rgba(71, 95, 219, 0.18);
+        padding: 18px;
+        resize: vertical;
+        font-size: 1.02rem;
+        line-height: 1.65;
+        background: rgba(255, 255, 255, 0.7);
+        color: #1b234b;
+        box-sizing: border-box;
+      }
+
+      .review-panel {
+        margin-top: 26px;
+        padding: 20px;
+        border-radius: 16px;
+        border: 1px solid rgba(71, 95, 219, 0.2);
+        background: rgba(71, 95, 219, 0.08);
+      }
+
+      .review-panel h2 {
+        margin: 0 0 8px;
+        font-size: 1.2rem;
+        color: #1e2a66;
+      }
+
+      .review-panel p {
+        margin: 0 0 12px;
+        color: rgba(30, 42, 102, 0.75);
+        font-size: 0.95rem;
+      }
+
+      .review-panel ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .review-panel li {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(71, 95, 219, 0.15);
+        display: grid;
+        gap: 6px;
+      }
+
+      .review-panel strong {
+        font-size: 0.9rem;
+        color: #475fdb;
+      }
+
+      .review-panel span {
+        font-size: 0.98rem;
+        line-height: 1.6;
+        color: #1b234b;
+      }
+
+      footer {
+        margin-top: 26px;
+        font-size: 0.88rem;
+        color: rgba(30, 42, 102, 0.6);
+        text-align: center;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 24px 18px;
+        }
+
+        .language-settings select {
+          width: 100%;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+    <script
+      src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"
+      integrity="sha384-2H0eAV/QXpVZl8vGeOawxDFUY8ailqXF/w3vGN9VOGBev5nYeD1yfknhk+aoCA8X"
+      crossorigin="anonymous"
+      defer
+    ></script>
+  </head>
+  <body>
+    <main>
+      <h1>Транскрибатор DITR</h1>
+      <p class="description">
+        Загрузите аудио-файл, чтобы получить дословную стенограмму без перевода.
+        Приложение использует модель Whisper через защищённый прокси и помогает
+        контролировать арабские цитаты из Корана, хадисов и поэтов.
+      </p>
+
+      <section class="upload-area" id="dropZone">
+        <input type="file" id="audioInput" accept="audio/*" />
+        <label for="audioInput">Выбрать аудио-файл</label>
+        <div class="file-name" id="fileName">Файл не выбран</div>
+        <div class="hint">
+          Поддерживаются форматы: mp3, wav, m4a, ogg, webm и другие. Можно
+          перетащить файл в это окно.
+        </div>
+      </section>
+
+      <section class="language-settings">
+        <label for="languageSelect">Подсказка модели по языку</label>
+        <select id="languageSelect">
+          <option value="auto" selected>Авто (русский + арабский)</option>
+          <option value="ru">Русский</option>
+          <option value="ar">Арабский</option>
+        </select>
+        <p class="hint">
+          Температура модели фиксирована на 0, чтобы не искажать цитаты. При
+          монолингвальной записи выберите нужный язык вручную.
+        </p>
+      </section>
+
+      <div class="controls">
+        <button class="primary" id="transcribeBtn" type="button">
+          Транскрибировать
+        </button>
+        <button class="secondary" id="copyBtn" type="button">
+          Скопировать текст
+        </button>
+        <button class="secondary" id="pdfBtn" type="button" disabled>
+          Экспорт в PDF
+        </button>
+        <button class="ghost" id="clearBtn" type="button">Очистить</button>
+      </div>
+
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+
+      <textarea
+        id="result"
+        placeholder="Здесь появится текст стенограммы"
+        readonly
+      ></textarea>
+
+      <section class="review-panel" id="reviewPanel" hidden>
+        <h2>Проверьте ключевые фрагменты</h2>
+        <p>
+          Эти сегменты содержат арабский текст или кавычки. Сверьтесь с
+          оригиналом, чтобы убедиться, что стенограмма не искажена.
+        </p>
+        <ul id="reviewList"></ul>
+      </section>
+
+      <footer>
+        Версия 2.0 • Расшифровка выполняется через Cloudflare Worker с моделью
+        <strong>large-v3</strong> по конечной точке
+        <code>/v1/audio/transcriptions</code>.
+      </footer>
+    </main>
+
+    <script>
+      const endpoint = "https://gelani-openai-key-transcribe-diroya.rs-stigma.workers.dev/";
+      const audioInput = document.getElementById("audioInput");
+      const transcribeBtn = document.getElementById("transcribeBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const pdfBtn = document.getElementById("pdfBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const statusBox = document.getElementById("status");
+      const resultBox = document.getElementById("result");
+      const fileNameBox = document.getElementById("fileName");
+      const dropZone = document.getElementById("dropZone");
+      const languageSelect = document.getElementById("languageSelect");
+      const reviewPanel = document.getElementById("reviewPanel");
+      const reviewList = document.getElementById("reviewList");
+
+      const state = {
+        segments: [],
+      };
+
+      const setStatus = (message, type = "") => {
+        statusBox.textContent = message;
+        statusBox.className = `status ${type}`.trim();
+      };
+
+      const handleFileSelect = (file) => {
+        if (!file) {
+          fileNameBox.textContent = "Файл не выбран";
+          dropZone.classList.remove("has-file");
+          return;
+        }
+
+        const sizeMb = file.size / 1024 / 1024;
+        fileNameBox.textContent = `${file.name} · ${sizeMb.toFixed(2)} МБ`;
+        dropZone.classList.add("has-file");
+      };
+
+      const resetUI = () => {
+        audioInput.value = "";
+        resultBox.value = "";
+        state.segments = [];
+        fileNameBox.textContent = "Файл не выбран";
+        dropZone.classList.remove("has-file");
+        reviewPanel.hidden = true;
+        reviewList.innerHTML = "";
+        pdfBtn.disabled = true;
+        setStatus("");
+      };
+
+      const formatTimestamp = (seconds) => {
+        if (typeof seconds !== "number" || Number.isNaN(seconds)) {
+          return "–";
+        }
+
+        const totalSeconds = Math.max(0, Math.floor(seconds));
+        const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+        const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+        const secs = String(totalSeconds % 60).padStart(2, "0");
+        return hrs === "00" ? `${mins}:${secs}` : `${hrs}:${mins}:${secs}`;
+      };
+
+      const populateReview = (segments = []) => {
+        reviewList.innerHTML = "";
+        if (!Array.isArray(segments) || segments.length === 0) {
+          reviewPanel.hidden = true;
+          return;
+        }
+
+        const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+        const quoteRegex = /[«»“”]/;
+
+        const highlighted = segments.filter((segment) => {
+          const text = typeof segment?.text === "string" ? segment.text : "";
+          return arabicRegex.test(text) || quoteRegex.test(text);
+        });
+
+        if (highlighted.length === 0) {
+          reviewPanel.hidden = true;
+          return;
+        }
+
+        highlighted.forEach((segment) => {
+          const item = document.createElement("li");
+          const time = document.createElement("strong");
+          const text = document.createElement("span");
+
+          time.textContent = `Отметка ${formatTimestamp(segment.start)} → ${formatTimestamp(segment.end)}`;
+          text.textContent = typeof segment.text === "string" ? segment.text : "";
+
+          item.append(time, text);
+          reviewList.append(item);
+        });
+
+        reviewPanel.hidden = false;
+      };
+
+      const copyToClipboard = async () => {
+        if (!resultBox.value) {
+          setStatus("Нет текста для копирования", "error");
+          return;
+        }
+
+        try {
+          await navigator.clipboard.writeText(resultBox.value);
+          setStatus("Текст скопирован в буфер обмена");
+        } catch (error) {
+          console.error("Clipboard error", error);
+          setStatus("Не удалось скопировать текст", "error");
+        }
+      };
+
+      const exportToPdf = () => {
+        const text = resultBox.value.trim();
+        if (!text) {
+          setStatus("Нет текста для сохранения в PDF.", "error");
+          return;
+        }
+
+        const pdfLib = window.jspdf;
+        if (!pdfLib?.jsPDF) {
+          setStatus("Библиотека для PDF ещё не загружена.", "error");
+          return;
+        }
+
+        const doc = new pdfLib.jsPDF({
+          orientation: "portrait",
+          unit: "pt",
+          format: "a4",
+        });
+
+        const margin = 48;
+        const maxWidth = doc.internal.pageSize.getWidth() - margin * 2;
+        const wrappedText = doc.splitTextToSize(text, maxWidth);
+
+        doc.setFont("Times", "Normal");
+        doc.setFontSize(12);
+        doc.text(wrappedText, margin, margin);
+        doc.save("transcript.pdf");
+
+        setStatus("PDF успешно сохранён.");
+      };
+
+      const transcribe = async () => {
+        const file = audioInput.files?.[0];
+        if (!file) {
+          setStatus("Сначала выберите аудио-файл", "error");
+          return;
+        }
+
+        transcribeBtn.disabled = true;
+        pdfBtn.disabled = true;
+        setStatus("Отправляем аудио в Whisper, подождите…");
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file, file.name);
+          formData.append("model", "large-v3");
+          formData.append("response_format", "verbose_json");
+          formData.append("temperature", "0");
+          formData.append("translate", "false");
+
+          const language = languageSelect.value;
+          if (language && language !== "auto") {
+            formData.append("language", language);
+          }
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          const contentType = response.headers.get("content-type") || "";
+          const isJson = contentType.includes("application/json");
+          const payload = isJson ? await response.json() : await response.text();
+
+          if (!response.ok) {
+            const errorMessage =
+              (payload && payload.error && payload.error.message) ||
+              (typeof payload === "string" ? payload : "Не удалось выполнить запрос");
+            throw new Error(errorMessage);
+          }
+
+          let textResult = "";
+          let segments = [];
+
+          if (typeof payload === "string") {
+            textResult = payload;
+          } else if (payload) {
+            if (typeof payload.text === "string" && payload.text.trim()) {
+              textResult = payload.text;
+            } else if (Array.isArray(payload.segments)) {
+              segments = payload.segments;
+              textResult = segments
+                .map((segment) => (typeof segment?.text === "string" ? segment.text : ""))
+                .join("\n");
+            } else {
+              textResult = JSON.stringify(payload, null, 2);
+            }
+          }
+
+          resultBox.value = textResult.trim();
+          state.segments = segments;
+
+          if (segments.length > 0) {
+            populateReview(segments);
+          } else {
+            reviewPanel.hidden = true;
+            reviewList.innerHTML = "";
+          }
+
+          if (resultBox.value) {
+            pdfBtn.disabled = false;
+            setStatus("Готово! Проверьте цитаты и при необходимости экспортируйте.");
+          } else {
+            setStatus("Получен пустой ответ. Убедитесь, что в аудио есть речь.", "error");
+          }
+        } catch (error) {
+          console.error("Transcription error", error);
+          setStatus(error.message || "Ошибка при отправке файла", "error");
+        } finally {
+          transcribeBtn.disabled = false;
+        }
+      };
+
+      transcribeBtn.addEventListener("click", transcribe);
+      copyBtn.addEventListener("click", copyToClipboard);
+      pdfBtn.addEventListener("click", exportToPdf);
+      clearBtn.addEventListener("click", () => {
+        resetUI();
+        setStatus("Форма очищена.");
+      });
+
+      audioInput.addEventListener("change", (event) => {
+        const [file] = event.target.files || [];
+        handleFileSelect(file);
+      });
+
+      const preventDefaults = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+      });
+
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropZone.addEventListener(
+          eventName,
+          () => dropZone.classList.add("dragover"),
+          false
+        );
+      });
+
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(
+          eventName,
+          () => dropZone.classList.remove("dragover"),
+          false
+        );
+      });
+
+      dropZone.addEventListener("drop", (event) => {
+        const dt = event.dataTransfer;
+        if (!dt?.files?.length) return;
+        const [file] = dt.files;
+        audioInput.files = dt.files;
+        handleFileSelect(file);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "b") {
+          event.preventDefault();
+          copyToClipboard();
+        }
+      });
+    </script>
+  </body>
+</html>
