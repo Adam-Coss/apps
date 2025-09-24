@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DITR: Расшифровка аудио и экспорт в PDF</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-2H0eAV/QXpVZl8vGeOawxDFUY8ailqXF/w3vGN9VOGBev5nYeD1yfknhk+aoCA8X" crossorigin="anonymous"></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <h1>DITR • Стенография аудио → PDF</h1>
+    <p class="lead">
+      Загрузите аудио, расшифруйте его через самую продвинутую модель Whisper-совместимого стека OpenAI, а затем экспортируйте дословный текст в формат PDF.
+    </p>
+
+    <section class="field">
+      <label for="audioInput">Аудиофайл (MP3, WAV, M4A, ...)</label>
+      <input id="audioInput" type="file" accept="audio/*" />
+      <p class="note">Файл отправляется в Cloudflare Worker, который безопасно вызывает OpenAI Whisper-1. Соблюдайте лимиты размера и политику безопасности.</p>
+    </section>
+
+    <button id="transcribeBtn" type="button">1. Расшифровать аудио (OpenAI Whisper)</button>
+    <div id="status" class="status-box"></div>
+
+    <section class="field">
+      <label for="transcriptOutput">Результат транскрибации</label>
+      <textarea id="transcriptOutput" placeholder="Здесь появится дословная стенограмма." readonly></textarea>
+    </section>
+
+    <button id="pdfBtn" type="button" disabled>2. Экспортировать стенограмму в PDF</button>
+
+    <footer>
+      Версия 1.1 • Расшифровка выполняется через Cloudflare Worker, вызывающий модель <strong>whisper-1</strong> по конечной точке
+      <code>/v1/audio/transcriptions</code>.
+    </footer>
+  </main>
+</body>
+</html>
