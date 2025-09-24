@@ -51,7 +51,6 @@
     }
 
     input[type="file"],
-    input[type="password"],
     textarea {
       width: 100%;
       font-size: 1rem;
@@ -155,15 +154,7 @@
     <section class="field">
       <label for="audioInput">Аудиофайл (MP3, WAV, M4A, ...)</label>
       <input id="audioInput" type="file" accept="audio/*" />
-      <p class="note">Файл будет отправлен в OpenAI API для облачной обработки. Соблюдайте лимиты размера и политику безопасности.</p>
-    </section>
-
-    <section class="field">
-      <label for="apiKey">OpenAI API Key</label>
-      <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
-      <p class="note">
-        Для продакшена настройте защищённый бэкенд-прокси и не храните ключи в клиентском коде.
-      </p>
+      <p class="note">Файл отправляется в Cloudflare Worker, который безопасно вызывает OpenAI Whisper-1. Соблюдайте лимиты размера и политику безопасности.</p>
     </section>
 
     <button id="transcribeBtn" type="button">1. Расшифровать аудио (OpenAI Whisper)</button>
@@ -177,13 +168,13 @@
     <button id="pdfBtn" type="button" disabled>2. Экспортировать стенограмму в PDF</button>
 
     <footer>
-      Версия 1.0 • Использует конечную точку <code>/v1/audio/transcriptions</code> и модель <strong>gpt-4o-transcribe</strong>.
+      Версия 1.1 • Расшифровка выполняется через Cloudflare Worker, вызывающий модель <strong>whisper-1</strong> по конечной точке
+      <code>/v1/audio/transcriptions</code>.
     </footer>
   </main>
 
   <script>
     const audioInput = document.getElementById("audioInput");
-    const apiKeyInput = document.getElementById("apiKey");
     const transcribeBtn = document.getElementById("transcribeBtn");
     const pdfBtn = document.getElementById("pdfBtn");
     const transcriptOutput = document.getElementById("transcriptOutput");
@@ -227,32 +218,21 @@
 
     async function transcribeAudio() {
       const file = audioInput.files?.[0];
-      const apiKey = apiKeyInput.value.trim();
-
       if (!file) {
         setStatus("Пожалуйста, выберите аудиофайл.", true);
         return;
       }
 
-      if (!apiKey) {
-        setStatus("Введите OpenAI API ключ или настройте бэкенд-прокси.", true);
-        return;
-      }
-
-      setStatus("Загружаем и расшифровываем аудио, пожалуйста подождите…");
+      setStatus("Отправляем аудио в Cloudflare Worker для расшифровки, пожалуйста подождите…");
       enablePDFButton(false);
 
       try {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("model", "gpt-4o-transcribe");
         formData.append("response_format", "text");
 
-        const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+        const response = await fetch("https://gelani-openai-key-transcribe-diroya.rs-stigma.workers.dev/", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`
-          },
           body: formData
         });
 
