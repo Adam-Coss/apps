@@ -10,6 +10,26 @@
     const sentenceContent = document.getElementById('sentence-content');
 
     const voiceSelect = document.getElementById('voice-select');
+    const DEFAULT_VOICE = 'zahar';
+    const SUPPORTED_VOICES = new Set([DEFAULT_VOICE, 'jane']);
+    const VOICE_LABELS = { zahar: 'Мужской', jane: 'Женский' };
+    let warnedAboutVoiceFallback = false;
+
+    function normalizeVoice(value) {
+      return SUPPORTED_VOICES.has(value) ? value : DEFAULT_VOICE;
+    }
+
+    function notifyVoiceFallback(originalVoice, fallbackVoice) {
+      if (warnedAboutVoiceFallback) return;
+      const original = originalVoice || 'неизвестный голос';
+      const fallback = VOICE_LABELS[fallbackVoice] || fallbackVoice;
+      console.warn(`Unsupported voice "${originalVoice}", fallback to "${fallbackVoice}".`);
+      showIndicatorMessage(
+        `Голос «${original}» недоступен — выбран «${fallback}».`,
+        { duration: 4000, error: true }
+      );
+      warnedAboutVoiceFallback = true;
+    }
     
     const sentenceSpeedControl = document.getElementById('sentence-speed-control');
     const sentenceSpeedValue = document.getElementById('sentence-speed-value');
@@ -114,6 +134,8 @@
     let isPaused = false;
     let activeAudio = null; // текущий проигрываемый Audio
     const pendingTimeouts = []; // пауза-осведомлённые таймеры
+    let indicatorHideTimeout = null;
+    let indicatorPauseTimer = null;
 
     function schedulePauseable(fn, delay){
       const t = { id: null, start: performance.now(), delay, remaining: delay, fn };
@@ -125,6 +147,13 @@
       if (!isPaused) { t.id = setTimeout(runner, delay); }
       pendingTimeouts.push(t);
       return t;
+    }
+
+    function cancelPauseableTimer(timerObj) {
+      if (!timerObj) return;
+      const idx = pendingTimeouts.indexOf(timerObj);
+      if (idx !== -1) pendingTimeouts.splice(idx, 1);
+      if (timerObj.id) clearTimeout(timerObj.id);
     }
     function pauseAll(){
       if (isPaused) return; isPaused = true;
@@ -151,6 +180,42 @@
     function clearAllTimeouts(){
       for (const t of pendingTimeouts) { if (t.id) clearTimeout(t.id); }
       pendingTimeouts.length = 0;
+      indicatorPauseTimer = null;
+    }
+
+    function hideIndicatorImmediate() {
+      if (indicatorHideTimeout) { clearTimeout(indicatorHideTimeout); indicatorHideTimeout = null; }
+      if (indicatorPauseTimer) { cancelPauseableTimer(indicatorPauseTimer); indicatorPauseTimer = null; }
+      if (!indicator) return;
+      indicator.classList.remove('visible');
+      indicator.classList.remove('error');
+      indicator.textContent = '';
+    }
+
+    function showIndicatorMessage(text, { duration = 2000, pauseAware = false, error = false } = {}) {
+      if (!indicator) return;
+      if (indicatorHideTimeout) { clearTimeout(indicatorHideTimeout); indicatorHideTimeout = null; }
+      if (indicatorPauseTimer) { cancelPauseableTimer(indicatorPauseTimer); indicatorPauseTimer = null; }
+
+      indicator.textContent = text;
+      indicator.classList.add('visible');
+      if (error) indicator.classList.add('error'); else indicator.classList.remove('error');
+
+      const hide = () => {
+        indicator.classList.remove('visible');
+        indicator.classList.remove('error');
+        indicator.textContent = '';
+        indicatorHideTimeout = null;
+        indicatorPauseTimer = null;
+      };
+
+      if (duration > 0) {
+        if (pauseAware) {
+          indicatorPauseTimer = schedulePauseable(hide, duration);
+        } else {
+          indicatorHideTimeout = setTimeout(hide, duration);
+        }
+      }
     }
 
     const helpButton = document.getElementById('help-button');
@@ -203,7 +268,7 @@
         volume: volumeControl.value,
         longWordThreshold: longWordThresholdControl.value,
         wordPause: wordPauseControl.value,
-        voice: voiceSelect.value,
+        voice: normalizeVoice(voiceSelect.value),
         nightMode: themeToggle.checked,
         textSize: textSizeControl.value,
         dictationSize: dictationSizeControl.value,
@@ -225,7 +290,14 @@
         if (settings.volume) { volumeControl.value = settings.volume; volumeValue.textContent = settings.volume; }
         if (settings.longWordThreshold) { longWordThresholdControl.value = settings.longWordThreshold; longWordThresholdValue.textContent = settings.longWordThreshold; }
         if (settings.wordPause) { wordPauseControl.value = settings.wordPause; wordPauseValue.textContent = settings.wordPause; }
-        if (settings.voice) { voiceSelect.value = settings.voice; }
+        if (settings.voice) {
+          const normalizedVoice = normalizeVoice(settings.voice);
+          voiceSelect.value = normalizedVoice;
+          if (normalizedVoice !== settings.voice) {
+            notifyVoiceFallback(settings.voice, normalizedVoice);
+            saveSettingsToCookies();
+          }
+        }
         if (typeof settings.nightMode === 'boolean') { themeToggle.checked = settings.nightMode; document.body.classList.toggle('night-mode', settings.nightMode); }
         if (settings.textSize) { textSizeControl.value = settings.textSize; textSizeValue.textContent = settings.textSize + "px"; textInput.style.fontSize = settings.textSize + "px"; }
         if (settings.dictationSize) { dictationSizeControl.value = settings.dictationSize; dictationSizeValue.textContent = settings.dictationSize + "px"; sentenceContent.style.fontSize = settings.dictationSize + "px"; }
@@ -245,7 +317,8 @@
       volumeControl.value = "1.0";          volumeValue.textContent = "1.0";
       longWordThresholdControl.value = "7"; longWordThresholdValue.textContent = "7";
       wordPauseControl.value = "200";       wordPauseValue.textContent = "200";
-      voiceSelect.value = "zahar";
+      voiceSelect.value = DEFAULT_VOICE;
+      warnedAboutVoiceFallback = false;
       textSizeControl.value = "16"; textSizeValue.textContent = "16px"; textInput.style.fontSize = "16px";
       dictationSizeControl.value = "48"; dictationSizeValue.textContent = "48px"; sentenceContent.style.fontSize = "48px";
       themeToggle.checked = true; document.body.classList.add('night-mode');
@@ -263,7 +336,10 @@
     volumeControl.addEventListener('input', () => { volumeValue.textContent = volumeControl.value; saveSettingsToCookies(); });
     longWordThresholdControl.addEventListener('input', () => { longWordThresholdValue.textContent = longWordThresholdControl.value; saveSettingsToCookies(); clearActivePreset(); });
     wordPauseControl.addEventListener('input', () => { wordPauseValue.textContent = wordPauseControl.value; saveSettingsToCookies(); clearActivePreset(); });
-    voiceSelect.addEventListener('change', () => { saveSettingsToCookies(); });
+    voiceSelect.addEventListener('change', () => {
+      warnedAboutVoiceFallback = false;
+      saveSettingsToCookies();
+    });
     themeToggle.addEventListener('change', () => { document.body.classList.toggle('night-mode', themeToggle.checked); saveSettingsToCookies(); });
     if (speakPunctToggle) speakPunctToggle.addEventListener('change', () => { saveSettingsToCookies(); });
 
@@ -302,6 +378,7 @@
         isSpeaking = true;
         isPaused = false;
         clearAllTimeouts();
+        hideIndicatorImmediate();
         pauseResumeButton.disabled = false;
         pauseResumeButton.textContent = 'Пауза';
 
@@ -429,9 +506,7 @@
 
           function stepPrepend(cb) {
             if (prependText && !isFirstSentence(sentIndex)) {
-              indicator.textContent = prependText;
-              indicator.classList.add('visible');
-              schedulePauseable(() => indicator.classList.remove('visible'), 2000);
+              showIndicatorMessage(prependText, { duration: 2000, pauseAware: true });
               yandexTtsPlay(
                 prependText,
                 parseFloat(auxSpeedControl.value),
@@ -512,15 +587,54 @@
     }
 
     // TTS-прокси
+    function extractTtsErrorMessage(rawText) {
+      if (!rawText) return '';
+      let trimmed = rawText;
+      try {
+        const parsed = JSON.parse(rawText);
+        if (typeof parsed === 'string') { return parsed; }
+        if (parsed && typeof parsed === 'object') {
+          if (typeof parsed.error_message === 'string') return parsed.error_message;
+          if (parsed.error && typeof parsed.error.message === 'string') return parsed.error.message;
+          if (typeof parsed.message === 'string') return parsed.message;
+        }
+      } catch (e) {}
+      if (typeof trimmed === 'string') { trimmed = trimmed.trim(); }
+      return trimmed;
+    }
+
     function yandexTtsPlay(text, speed, volume, voice, callback) {
       if (!text || !text.trim()) { callback(); return; }
       if (speed < 0.1) speed = 0.1; if (speed > 3.0) speed = 3.0;
+
+      const normalizedVoice = normalizeVoice(voice);
+      if (normalizedVoice !== voice) {
+        notifyVoiceFallback(voice, normalizedVoice);
+      }
+
+      const payload = { text, speed, voice: normalizedVoice };
+
       fetch(GLITCH_TTS_URL, {
         method: 'POST',
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, speed, voice })
+        body: JSON.stringify(payload)
       })
-      .then(res => { if (!res.ok) { throw new Error("Ответ TTS не OK: " + res.status); } return res.blob(); })
+      .then(async res => {
+        if (!res.ok) {
+          const errorText = await res.text().catch(() => '');
+          const message = extractTtsErrorMessage(errorText);
+          throw new Error(`Ответ TTS не OK: ${res.status}${message ? ` — ${message}` : ''}`);
+        }
+
+        const contentType = res.headers.get('content-type') || '';
+        if (!/^audio\//i.test(contentType)) {
+          const errorText = await res.text().catch(() => '');
+          const message = extractTtsErrorMessage(errorText);
+          throw new Error(message || 'TTS вернул неожиданный ответ.');
+        }
+
+        return res.blob();
+      })
       .then(blob => {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
@@ -529,10 +643,18 @@
         audio.onerror = () => { if (activeAudio === audio) activeAudio = null; callback(); };
         activeAudio = audio;
         if (!isPaused) {
-          audio.play().catch(err => { console.error("Ошибка audio.play():", err); callback(); });
+          audio.play().catch(err => {
+            console.error("Ошибка audio.play():", err);
+            showIndicatorMessage('Ошибка воспроизведения аудио.', { duration: 4000, error: true });
+            callback();
+          });
         } // если пауза — запуск произойдёт при resumeAll()
       })
-      .catch(err => { console.error("Ошибка fetch TTS:", err); callback(); });
+      .catch(err => {
+        console.error("Ошибка fetch TTS:", err);
+        showIndicatorMessage(err.message || 'Ошибка синтеза речи.', { duration: 4000, error: true });
+        callback();
+      });
     }
 
     function speakAuxExpressions(expressions, cb) {
@@ -567,8 +689,7 @@
 
       stopTimer();
       resetProgressBar();
-      indicator.textContent = '';
-      indicator.classList.remove('visible');
+      hideIndicatorImmediate();
     }
     function startTimer() { timer = 0; timerDisplay.textContent = `Время на странице: ${timer} секунд`; timerInterval = setInterval(() => { timer++; timerDisplay.textContent = `Время на странице: ${timer} секунд`; }, 1000); }
     function stopTimer() { clearInterval(timerInterval); }
